@@ -27,41 +27,6 @@ Problématique
 
 Le public visé est un décideur public (la métropole, la préfecture) qui doit prioriser ses investissements de prévention.
 
-Ton intuition d’écarter les incendies est bonne : les feux ne figurent pas dans CatNat, et la métropole en a très peu. Ta problématique tient avec deux bases seulement, ce qui rendra le dashboard plus lisible.
-
-Niveaux d’analyse
-Niveau	Rôle	Base
-28 communes de Bordeaux Métropole	Sujet principal : comparer les communes, trouver les priorités	CatNat (filtre libelle_epci)
-Bordeaux Métropole entière	Évolution dans le temps	CatNat (épisodes comptés une seule fois)
-Gironde, autres métropoles, France	Point de repère : Bordeaux est-elle plus ou moins touchée ?	CatNat (la base est nationale)
-Gironde (département 33)	Climat de fond	Météo (stations, pas de commune)
-
-Ta base CatNat est nationale (260 601 lignes). Elle te permet donc de répondre à ta question de départ, « Bordeaux comparée au reste de la France », sans autre base : tu compares le nombre moyen d’arrêtés par commune de Bordeaux Métropole avec celui des autres métropoles. Il faut ramener à la commune, car les métropoles n’ont pas le même nombre de communes.
-
-Pourquoi ces deux bases
-
-CatNat (le noyau) : source officielle, au niveau commune, depuis 1982, et elle parle directement de risques naturels. Elle donne l’exposition passée.
-
-Météo (l’explication) : elle montre l’évolution du climat de 1954 à 2024. Elle relie les catastrophes à une cause.
-Écartées : incendies (hors sujet pour la métropole, sauf éventuel graphique bonus sur la Gironde en 2022) et DVF (période incompatible).
-
-Colonnes à garder
-CatNat : code_geographique, libelle_geographique, libelle_epci, departement, type_catastrophe, date_debut, date_fin, date_arrete.
-
-Météo : NUM_POSTE, NOM_USUEL, AAAAMM, puis un petit noyau selon le risque. Ignore toutes les colonnes Q... et ...DAT.
-Chaleur : TX, NBJTX30, NBJTX35, NBJTNS20 (nuits chaudes).
-Sécheresse : RR (pluie), ETP (évapotranspiration).
-Pluies extrêmes : NBJRR30, NBJRR50 (jours de forte pluie).
-Vent : une colonne de jours de vent fort (seuils à lire dans la doc Météo-France).
-
-Trois précautions méthodologiques
-Une ligne CatNat est un couple (commune, arrêté). Une inondation qui touche 20 communes fait 20 lignes. Pour compter les événements au niveau métropole, compte les épisodes distincts (type_catastrophe, date_debut, date_fin). Pour comparer les communes, compte les lignes.
-
-CatNat mesure des événements reconnus administrativement, pas l’intensité physique. C’est un bon indicateur de l’exposition, mais pas une mesure exacte du danger. Précise-le sur le dashboard.
-Les arrêtés récents sont publiés avec retard. 2024 et 2025 seront sous-estimés : arrête ta série CatNat à 2023 ou signale-le clairement.
-
-À vérifier aussi : Sécheresse et Retrait-gonflement des argiles sont probablement deux libellés d’un même phénomène à des époques différentes. Trace leur nombre par année pour confirmer, puis fusionne-les en « Sécheresse / argiles » si c’est le cas. Garde les autres catégories rares (Avalanche, Grêle / neige, Divers) dans un groupe « Autres ».
-
 Les graphiques, dans l’ordre de l’histoire
 #	Graphique	Réponse apportée
 1	Courbe des jours ≥ 30 °C par an (1954-2024), avec moyenne mobile sur 10 ans	Le climat se réchauffe
@@ -183,3 +148,160 @@ La relation entre le climat et les catastrophes (nuage de points, exploratoire :
 - Voir une facon de joindre les deux analyse pour avoir une corrélation entre les deux mondes : Météo x Cat
 - SOit une petite régression soit une autre façon de faire 
 - PRésentation sur la tram de la A suivre : Justification des méthodes (technologie utilisé) que nous avons choisie PQ ? les base que nous avons ? ce que nous avons fait en pré traitemnet et pourquoi (présent dans le readme) ?  les choix d'affichage ? (prétraitement des bases completement présent sur le readme)
+
+## Visuels et tables associés
+
+### 1. Nombre d’arrêtés par département en France
+
+**Table :**  
+`benchmark`
+
+**Filtre / colonnes :**  
+`niveau == "Département"`, colonnes `territoire` et `nb_arretes` (total) ou `arretes_par_commune` (moyenne).
+
+**Visuel :**  
+Barres horizontales (top 15).
+
+
+### 2. Arrêtés par département et par type de risque
+
+**Table :**  
+`arretes_par_commune`
+
+**Filtre / colonnes :**  
+`groupby("libelle_departement")` puis somme des colonnes de types.
+
+**Visuel :**  
+Barres empilées.
+
+
+### 3. Arrêtés par commune dans le 33
+
+**Table :**  
+`arretes_par_commune`
+
+**Filtre / colonnes :**  
+`departement == "33"`, colonne `nb_arretes`.
+
+**Visuel :**  
+Classement des 20 premières, ou histogramme de distribution.
+
+
+### 4. Les 28 communes de la métropole par type de risque
+
+**Table :**  
+`heatmap_communes`
+
+**Filtre / colonnes :**  
+Colonnes de types (Inondations, Sécheresse / argiles, Tempêtes...).
+
+**Visuel :**  
+Heatmap.
+
+
+### 5. Bordeaux Métropole vs reste de la Gironde vs France vs autres métropoles
+
+**Table :**  
+`benchmark`
+
+**Filtre / colonnes :**  
+Filtre sur `niveau` (France, Département, Métropole).
+
+**Visuel :**  
+Barres comparées, KPI en haut de page.
+
+
+### 6. Évolution des catastrophes dans la métropole
+
+**Table :**  
+`episodes_par_annee`
+
+**Filtre / colonnes :**  
+Une colonne par type, `annee` en abscisse.
+
+**Visuel :**  
+Barres empilées par année, filtre par type.
+
+
+### 7. Risque dominant
+
+**Table :**  
+`episodes_par_annee` ou `heatmap_communes`
+
+**Filtre / colonnes :**  
+Somme des colonnes de types.
+
+**Visuel :**  
+Barre à 100 %.
+
+## Indicateurs climatiques et visuels associés
+
+### 8. Évolution d’un indicateur avec sélecteur
+
+**Table :**  
+`climat_annuel`
+
+**Filtre / colonnes :**  
+`annee` en abscisse, liste déroulante parmi `TX`, `NBJTX30`, `NBJTX35`, `NBJTNS20`, `RR`, `ETP`, `NBJRR30`, `NBJRR50`, `bilan_hydrique`.
+
+**Visuel :**  
+Courbe.
+
+
+### 9. Réchauffement
+
+**Table :**  
+`climat_annuel`
+
+**Filtre / colonnes :**  
+`NBJTX30` et `NBJTX30_mm10` (moyenne mobile 10 ans).
+
+**Visuel :**  
+Courbe + tendance.
+
+
+### 10. Sécheresse
+
+**Table :**  
+`climat_annuel`
+
+**Filtre / colonnes :**  
+`bilan_hydrique`, `RR`, `ETP`.
+
+**Visuel :**  
+Courbe, ligne à zéro.
+
+
+### 11. Pluies extrêmes
+
+**Table :**  
+`climat_annuel`
+
+**Filtre / colonnes :**  
+`NBJRR30`, `NBJRR50`.
+
+**Visuel :**  
+Barres par année.
+
+
+### 12. Fiabilité de la moyenne
+
+**Table :**  
+`climat_annuel`
+
+**Filtre / colonnes :**  
+`nb_stations`.
+
+**Visuel :**  
+Petite note sous le graphique.
+
+### 13. Le climat évolue-t-il avec les catastrophes ?
+
+**Table :**  
+`lien_climat_catastrophes`
+
+**Filtre / colonnes :**  
+`NBJTX30` ou `bilan_hydrique` en abscisse, `Sécheresse / argiles` en ordonnée.
+
+**Visuel :**  
+Nuage de points exploratoire (environ 40 points, pas de preuve de cause).
