@@ -86,14 +86,14 @@ Préparer la météo annuelle (jours chauds, pluie, ETP) à partir de ta table m
 Détail et interprétation des bases d'analyse dans le dossier notebook
 
 Table	| Niveau géographique	Une ligne =	|Ton interprétation
-benchmark	Une valeur par territoire (chaque métropole, Gironde, France)	Un territoire	Pas « pour chaque commune » : c’est la moyenne d’arrêtés par commune de chaque territoire
 
-climat_annuel	Gironde : moyenne des 19 stations (Mérignac est l’une d’elles)	Une année (1954-2024)	Pas Mérignac seule
+benchmark | Une valeur par territoire (chaque métropole, Gironde, France)	| Un territoire	Pas « pour chaque commune » : c’est la moyenne d’arrêtés par commune de chaque territoire
 
-heatmap_communes	Les 28 communes de Bordeaux Métropole	Une commune	Pas toute la Gironde
+climat_annuel| Gironde : moyenne des 19 stations (Mérignac est l’une d’elles) |	Une année (1954-2024)	
 
-episodes_par_annee	Bordeaux Métropole uniquement	Une année (1982-2022)	Colonnes = types de risque
+heatmap_communes| Les 28 communes de Bordeaux Métropole |	Une commune	par ligne
 
-lien_climat_catastrophes	Climat de la Gironde + épisodes de la métropole	Une année	Oui, c’est bien le lien entre les deux, année par année
+episodes_par_annee |	Bordeaux Métropole uniquement	| Une année (1982-2022)	Colonnes = types de risque
 
-test
+lien_climat_catastrophes |	Climat de la Gironde + épisodes de la métropole	Une année	| lien entre les deux, année par année
+
