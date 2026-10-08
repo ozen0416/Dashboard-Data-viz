@@ -173,3 +173,13 @@ Jointure de `climat_annuel` et `episodes_par_annee` sur l’année (années comm
 
 **Ce qu’elle permet de voir :**  
 La relation entre le climat et les catastrophes (nuage de points, exploratoire : ce n’est pas une preuve de cause).
+
+
+## POINT a voir dans le dash 
+
+- présentation du dashboard (orchestration)
+- UN coté météo et un catastrophe naturel avec des KPI sur le haut de la page (proposition du prof) Sinon on peut avoir un plotline qui montre l'évolution des indicateur météo a travers le temps les températures, la pluviométrie etc.
+- Peut se basé sur des décénies pour nos analyses
+- Voir une facon de joindre les deux analyse pour avoir une corrélation entre les deux mondes : Météo x Cat
+- SOit une petite régression soit une autre façon de faire 
+- PRésentation sur la tram de la A suivre : Justification des méthodes (technologie utilisé) que nous avons choisie PQ ? les base que nous avons ? ce que nous avons fait en pré traitemnet et pourquoi (présent dans le readme) ?  les choix d'affichage ? (prétraitement des bases completement présent sur le readme)
