@@ -1,29 +1,29 @@
-﻿index,code_commune,libelle_geographique,Autres,Inondations,Mouvements de terrain,Sécheresse / argiles,Tempêtes,total
-0,33069,Le Bouscat,16,39,3,7,17,82
-1,33063,Bordeaux,0,35,5,26,1,67
-2,33281,Mérignac,1,27,3,18,2,51
-3,33013,Artigues-près-Bordeaux,4,16,3,13,5,41
-4,33039,Bègles,1,19,4,13,2,39
-5,33318,Pessac,0,16,3,18,1,38
-6,33192,Gradignan,1,16,3,14,2,36
-7,33550,Villenave-d'Ornon,0,16,3,16,1,36
-8,33249,Lormont,0,12,3,16,1,32
-9,33522,Talence,0,13,3,13,1,30
-10,33119,Cenon,0,15,3,11,1,30
-11,33162,Eysines,0,13,3,13,1,30
-12,33065,Bouliac,1,11,4,11,2,29
-13,33075,Bruges,0,13,4,11,1,29
-14,33032,Bassens,0,9,4,13,1,27
-15,33449,Saint-Médard-en-Jalles,0,9,3,13,1,26
-16,33056,Blanquefort,0,5,3,16,1,25
-17,33519,Le Taillan-Médoc,0,8,3,12,1,24
-18,33096,Carbon-Blanc,0,9,3,10,1,23
-19,33167,Floirac,0,9,4,8,1,22
-20,33376,Saint-Aubin-de-Médoc,0,6,3,11,1,21
-21,33200,Le Haillan,0,9,3,7,1,20
-22,33003,Ambarès-et-Lagrave,0,9,3,6,1,19
-23,33487,Saint-Vincent-de-Paul,0,4,4,7,1,16
-24,33273,Martignas-sur-Jalle,0,4,3,7,1,15
-25,33434,Saint-Louis-de-Montferrand,0,4,4,5,1,14
-26,33004,Ambès,0,4,4,4,1,13
-27,33312,Parempuyre,0,4,3,4,1,12
+﻿code_commune,libelle_geographique,departement,libelle_departement,epci,libelle_epci,Autres,Inondations,Mouvements de terrain,Sécheresse / argiles,Tempêtes,nb_arretes
+33069,Le Bouscat,33,Gironde,243300316,Bordeaux Métropole,16,38,3,7,17,81
+33063,Bordeaux,33,Gironde,243300316,Bordeaux Métropole,0,34,5,26,1,66
+33281,Mérignac,33,Gironde,243300316,Bordeaux Métropole,1,26,3,18,2,50
+33013,Artigues-près-Bordeaux,33,Gironde,243300316,Bordeaux Métropole,4,16,3,13,5,41
+33039,Bègles,33,Gironde,243300316,Bordeaux Métropole,1,19,4,13,2,39
+33318,Pessac,33,Gironde,243300316,Bordeaux Métropole,0,16,3,18,1,38
+33192,Gradignan,33,Gironde,243300316,Bordeaux Métropole,1,16,3,14,2,36
+33550,Villenave-d'Ornon,33,Gironde,243300316,Bordeaux Métropole,0,15,3,16,1,35
+33249,Lormont,33,Gironde,243300316,Bordeaux Métropole,0,11,3,16,1,31
+33522,Talence,33,Gironde,243300316,Bordeaux Métropole,0,13,3,13,1,30
+33162,Eysines,33,Gironde,243300316,Bordeaux Métropole,0,13,3,13,1,30
+33119,Cenon,33,Gironde,243300316,Bordeaux Métropole,0,14,3,11,1,29
+33075,Bruges,33,Gironde,243300316,Bordeaux Métropole,0,13,4,11,1,29
+33065,Bouliac,33,Gironde,243300316,Bordeaux Métropole,1,11,4,11,2,29
+33032,Bassens,33,Gironde,243300316,Bordeaux Métropole,0,9,4,13,1,27
+33449,Saint-Médard-en-Jalles,33,Gironde,243300316,Bordeaux Métropole,0,9,3,13,1,26
+33056,Blanquefort,33,Gironde,243300316,Bordeaux Métropole,0,5,3,16,1,25
+33519,Le Taillan-Médoc,33,Gironde,243300316,Bordeaux Métropole,0,8,3,12,1,24
+33096,Carbon-Blanc,33,Gironde,243300316,Bordeaux Métropole,0,9,3,10,1,23
+33167,Floirac,33,Gironde,243300316,Bordeaux Métropole,0,9,4,8,1,22
+33376,Saint-Aubin-de-Médoc,33,Gironde,243300316,Bordeaux Métropole,0,6,3,11,1,21
+33003,Ambarès-et-Lagrave,33,Gironde,243300316,Bordeaux Métropole,0,9,3,6,1,19
+33200,Le Haillan,33,Gironde,243300316,Bordeaux Métropole,0,8,3,7,1,19
+33487,Saint-Vincent-de-Paul,33,Gironde,243300316,Bordeaux Métropole,0,4,4,7,1,16
+33273,Martignas-sur-Jalle,33,Gironde,243300316,Bordeaux Métropole,0,4,3,7,1,15
+33434,Saint-Louis-de-Montferrand,33,Gironde,243300316,Bordeaux Métropole,0,4,4,5,1,14
+33004,Ambès,33,Gironde,243300316,Bordeaux Métropole,0,4,4,4,1,13
+33312,Parempuyre,33,Gironde,243300316,Bordeaux Métropole,0,4,3,4,1,12

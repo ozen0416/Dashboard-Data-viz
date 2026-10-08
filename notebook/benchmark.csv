@@ -1,38 +1,138 @@
-﻿territoire,arretes_par_commune
-Bordeaux Métropole,30.25
-Métropole Nice Côte d'Azur,25.686274509803923
-Toulouse Métropole,21.16216216216216
-Métropole d'Aix-Marseille-Provence,19.652173913043477
-Montpellier Méditerranée Métropole,19.129032258064516
-Métropole Toulon-Provence-Méditerranée,19.0
-Métropole de Lyon,18.25862068965517
-Tours Métropole Val de Loire,16.772727272727273
-Clermont Auvergne Métropole,16.666666666666668
-Gironde,15.382022471910112
-Communauté urbaine Angers Loire Métropole,15.10344827586207
-Métropole du Grand Nancy,14.9
-Communauté d'agglomération de Nîmes Métropole,14.692307692307692
-Métropole du Grand Paris,14.084615384615384
-Communauté urbaine Perpignan Méditerranée Métropole,13.63888888888889
-Orléans Métropole,11.818181818181818
-Brest Métropole,11.75
-Communauté d'agglomération Châteauroux Métropole,11.714285714285714
-Communauté urbaine Le Mans Métropole,11.55
-Metz Métropole,10.108695652173912
-Saint-Etienne Métropole,9.773584905660377
-Métropole Rouen Normandie,9.366197183098592
-Ardenne Métropole,8.859649122807017
-Nantes Métropole,8.75
-Communauté urbaine Le Havre Seine Métropole,8.314814814814815
-Eurométropole de Strasbourg,8.030303030303031
-Communauté urbaine Limoges Métropole,7.7
-Métropole Européenne de Lille,7.6947368421052635
-France,7.517717787155327
-Communauté urbaine Grand Besançon Métropole,6.880597014925373
-Dijon Métropole,6.869565217391305
-Rennes Métropole,6.4186046511627906
-Communauté d'agglomération Valenciennes Métropole,4.857142857142857
-Communauté d'agglomération Amiens Métropole,4.435897435897436
-Communauté d'agglomération Chartres Métropole,4.363636363636363
-Communauté d'agglomération Troyes Champagne Métropole,4.308641975308642
-Grenoble-Alpes-Métropole,3.938775510204082
+﻿niveau,territoire,nb_arretes,nb_communes,arretes_par_commune
+Métropole,Bordeaux Métropole,840,28,30.0
+Métropole,Métropole Nice Côte d'Azur,1241,51,24.33
+Département,Paris,22,1,22.0
+Métropole,Toulouse Métropole,761,37,20.57
+Métropole,Métropole d'Aix-Marseille-Provence,1747,92,18.99
+Département,Alpes-Maritimes,3045,163,18.68
+Métropole,Montpellier Méditerranée Métropole,577,31,18.61
+Métropole,Métropole Toulon-Provence-Méditerranée,222,12,18.5
+Métropole,Métropole de Lyon,1035,58,17.84
+Département,La Réunion,414,24,17.25
+Métropole,Tours Métropole Val de Loire,368,22,16.73
+Département,Bouches-du-Rhône,1970,119,16.55
+Métropole,Clermont Auvergne Métropole,340,21,16.19
+Département,Rhône,4102,265,15.48
+Département,Martinique,520,34,15.29
+Département,Gironde,8153,534,15.27
+Métropole,Communauté urbaine Angers Loire Métropole,434,29,14.97
+Département,Seine-Saint-Denis,583,39,14.95
+Métropole,Métropole du Grand Nancy,298,20,14.9
+Département,Maine-et-Loire,2583,175,14.76
+Département,Tarn-et-Garonne,2874,195,14.74
+Métropole,Communauté d'agglomération de Nîmes Métropole,557,39,14.28
+Département,Lot-et-Garonne,4495,319,14.09
+Métropole,Métropole du Grand Paris,1820,130,14.0
+Département,Val-de-Marne,643,47,13.68
+Métropole,Communauté urbaine Perpignan Méditerranée Métropole,478,36,13.28
+Département,Guadeloupe,418,32,13.06
+Département,Aude,5571,433,12.87
+Département,Vienne,3311,265,12.49
+Département,Charente-Maritime,5660,462,12.25
+Département,Dordogne,5978,503,11.88
+Département,Hérault,3989,341,11.7
+Département,Vaucluse,1764,151,11.68
+Métropole,Orléans Métropole,257,22,11.68
+Département,Haute-Garonne,6839,586,11.67
+Métropole,Brest Métropole,93,8,11.62
+Département,Gard,4038,350,11.54
+Métropole,Communauté d'agglomération Châteauroux Métropole,161,14,11.5
+Métropole,Communauté urbaine Le Mans Métropole,229,20,11.45
+Département,Hauts-de-Seine,408,36,11.33
+Département,Pyrénées-Orientales,2457,226,10.87
+Département,Deux-Sèvres,2723,252,10.81
+Département,Vendée,2673,251,10.65
+Département,Pyrénées-Atlantiques,5743,545,10.54
+Département,Var,1590,151,10.53
+Département,Gers,4660,458,10.17
+Département,Essonne,1964,194,10.12
+Métropole,Metz Métropole,457,46,9.93
+Département,Tarn,3055,314,9.73
+Département,Indre,2341,241,9.71
+Métropole,Métropole Rouen Normandie,661,71,9.31
+Métropole,Saint-Etienne Métropole,483,53,9.11
+Département,Haute-Saône,4843,536,9.04
+Département,Val-d'Oise,1619,183,8.85
+Métropole,Ardenne Métropole,499,57,8.75
+Département,Saône-et-Loire,4839,563,8.6
+Département,Ardèche,2816,335,8.41
+Département,Drôme,3024,362,8.35
+Département,Cher,2371,286,8.29
+Métropole,Communauté urbaine Le Havre Seine Métropole,445,54,8.24
+Département,Seine-et-Marne,4158,507,8.2
+Métropole,Nantes Métropole,196,24,8.17
+Département,Allier,2561,317,8.08
+Métropole,Eurométropole de Strasbourg,264,33,8.0
+Département,Yvelines,2063,259,7.97
+Département,Indre-et-Loire,2143,272,7.88
+Département,Meurthe-et-Moselle,4646,591,7.86
+Département,Puy-de-Dôme,3605,463,7.79
+Département,Loire,2441,320,7.63
+Département,Charente,2724,359,7.59
+Département,Lot,2363,312,7.57
+Métropole,Métropole Européenne de Lille,711,95,7.48
+Métropole,Communauté urbaine Limoges Métropole,149,20,7.45
+Département,Finistère,2049,277,7.4
+Département,Moselle,5313,725,7.33
+France,France,253055,34598,7.31
+Département,Hautes-Pyrénées,3308,469,7.05
+Département,Côtes-d'Armor,2386,343,6.96
+Département,Haute-Corse,1552,225,6.9
+Département,Landes,2230,327,6.82
+Département,Isère,3483,512,6.8
+Métropole,Communauté urbaine Grand Besançon Métropole,450,67,6.72
+Département,Nièvre,2056,309,6.65
+Département,Nord,4225,647,6.53
+Métropole,Dijon Métropole,150,23,6.52
+Département,Loiret,2104,325,6.47
+Département,Morbihan,1605,249,6.45
+Département,Seine-Maritime,4544,706,6.44
+Département,Jura,3162,492,6.43
+Département,Sarthe,2247,352,6.38
+Métropole,Rennes Métropole,273,43,6.35
+Département,Calvados,3323,525,6.33
+Département,Loir-et-Cher,1688,267,6.32
+Département,Ariège,1999,325,6.15
+Département,Corrèze,1687,277,6.09
+Département,Loire-Atlantique,1251,207,6.04
+Département,Bas-Rhin,3059,514,5.95
+Département,Pas-de-Calais,5237,887,5.9
+Département,Haute-Loire,1495,257,5.82
+Département,Vosges,2854,506,5.64
+Département,Manche,2503,445,5.62
+Département,Lozère,842,152,5.54
+Département,Ille-et-Vilaine,1816,331,5.49
+Département,Ardennes,2429,447,5.43
+Département,Territoire de Belfort,544,101,5.39
+Département,Haute-Savoie,1459,279,5.23
+Département,Cantal,1280,246,5.2
+Département,Savoie,1351,273,4.95
+Département,Haute-Vienne,958,195,4.91
+Métropole,Communauté d'agglomération Valenciennes Métropole,170,35,4.86
+Département,Haut-Rhin,1773,366,4.84
+Département,Aisne,3780,797,4.74
+Département,Yonne,1977,423,4.67
+Département,Doubs,2535,563,4.5
+Département,Meuse,2227,498,4.47
+Département,Corse-du-Sud,480,108,4.44
+Département,Aveyron,1244,284,4.38
+Département,Creuse,1111,255,4.36
+Métropole,Communauté d'agglomération Amiens Métropole,170,39,4.36
+Département,Alpes-de-Haute-Provence,735,173,4.25
+Métropole,Communauté d'agglomération Troyes Champagne Métropole,337,81,4.16
+Métropole,Communauté d'agglomération Chartres Métropole,273,66,4.14
+Département,Haute-Marne,1738,423,4.11
+Département,Eure,2363,584,4.05
+Département,Oise,2746,679,4.04
+Département,Mayenne,958,240,3.99
+Département,Eure-et-Loir,1436,363,3.96
+Métropole,Grenoble-Alpes-Métropole,189,49,3.86
+Département,Somme,2801,771,3.63
+Département,Marne,2202,610,3.61
+Département,Aube,1547,429,3.61
+Département,Orne,1345,381,3.53
+Département,Ain,1218,346,3.52
+Département,Côte-d'Or,1695,584,2.9
+Département,Guyane,46,17,2.71
+Département,Hautes-Alpes,248,124,2.0
+Département,Mayotte,9,17,0.53
