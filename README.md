@@ -67,7 +67,33 @@ Les graphiques, dans l’ordre de l’histoire
 
 Le graphique 5 est le cœur du dashboard : c’est lui qui répond à « où agir en priorité ». Une carte des 28 communes serait un bonus (il faut les contours communaux). Si tu veux relier le climat aux catastrophes, ajoute un nuage de points « jours de forte chaleur ou sécheresse vs nombre d’arrêtés sécheresse par année », en le présentant comme une corrélation exploratoire, pas une preuve de cause.
 
+KPI à afficher en haut du dashboard :
+
+Jours ≥ 30 °C : moyenne de la dernière décennie vs la première (en jours et en %).
+Épisodes CatNat dans la métropole depuis 1982, et par décennie.
+Risque dominant : le type le plus fréquent (en part).
+Arrêtés par commune : Bordeaux Métropole vs France (rapport).
+Commune la plus touchée, avec son risque principal.
+
+Un dernier élément, sans table supplémentaire : un tableau de priorités. Pour chaque commune de heatmap_communes, tu prends la colonne qui a la valeur maximale pour trouver son risque dominant, puis tu y associes la mesure suggérée (points d’ombre, surveillance du bâti, etc.). C’est l’écran qui répond à « où agir en priorité ».
+
 Ce que tu dois faire maintenant
 Charger CatNat, filtrer la métropole, vérifier qu’il y a bien 28 communes.
 Regrouper les types de catastrophe (sécheresse/argiles, inondations, tempêtes, mouvements de terrain, autres).
 Préparer la météo annuelle (jours chauds, pluie, ETP) à partir de ta table mensuelle.
+
+
+Détail et interprétation des bases d'analyse dans le dossier notebook
+
+Table	| Niveau géographique	Une ligne =	|Ton interprétation
+benchmark	Une valeur par territoire (chaque métropole, Gironde, France)	Un territoire	Pas « pour chaque commune » : c’est la moyenne d’arrêtés par commune de chaque territoire
+
+climat_annuel	Gironde : moyenne des 19 stations (Mérignac est l’une d’elles)	Une année (1954-2024)	Pas Mérignac seule
+
+heatmap_communes	Les 28 communes de Bordeaux Métropole	Une commune	Pas toute la Gironde
+
+episodes_par_annee	Bordeaux Métropole uniquement	Une année (1982-2022)	Colonnes = types de risque
+
+lien_climat_catastrophes	Climat de la Gironde + épisodes de la métropole	Une année	Oui, c’est bien le lien entre les deux, année par année
+
+
