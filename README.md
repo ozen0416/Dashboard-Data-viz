@@ -39,18 +39,24 @@ Gironde (département 33)	Climat de fond	Météo (stations, pas de commune)
 Ta base CatNat est nationale (260 601 lignes). Elle te permet donc de répondre à ta question de départ, « Bordeaux comparée au reste de la France », sans autre base : tu compares le nombre moyen d’arrêtés par commune de Bordeaux Métropole avec celui des autres métropoles. Il faut ramener à la commune, car les métropoles n’ont pas le même nombre de communes.
 
 Pourquoi ces deux bases
+
 CatNat (le noyau) : source officielle, au niveau commune, depuis 1982, et elle parle directement de risques naturels. Elle donne l’exposition passée.
+
 Météo (l’explication) : elle montre l’évolution du climat de 1954 à 2024. Elle relie les catastrophes à une cause.
 Écartées : incendies (hors sujet pour la métropole, sauf éventuel graphique bonus sur la Gironde en 2022) et DVF (période incompatible).
+
 Colonnes à garder
 CatNat : code_geographique, libelle_geographique, libelle_epci, departement, type_catastrophe, date_debut, date_fin, date_arrete.
+
 Météo : NUM_POSTE, NOM_USUEL, AAAAMM, puis un petit noyau selon le risque. Ignore toutes les colonnes Q... et ...DAT.
 Chaleur : TX, NBJTX30, NBJTX35, NBJTNS20 (nuits chaudes).
 Sécheresse : RR (pluie), ETP (évapotranspiration).
 Pluies extrêmes : NBJRR30, NBJRR50 (jours de forte pluie).
 Vent : une colonne de jours de vent fort (seuils à lire dans la doc Météo-France).
+
 Trois précautions méthodologiques
 Une ligne CatNat est un couple (commune, arrêté). Une inondation qui touche 20 communes fait 20 lignes. Pour compter les événements au niveau métropole, compte les épisodes distincts (type_catastrophe, date_debut, date_fin). Pour comparer les communes, compte les lignes.
+
 CatNat mesure des événements reconnus administrativement, pas l’intensité physique. C’est un bon indicateur de l’exposition, mais pas une mesure exacte du danger. Précise-le sur le dashboard.
 Les arrêtés récents sont publiés avec retard. 2024 et 2025 seront sous-estimés : arrête ta série CatNat à 2023 ou signale-le clairement.
 
