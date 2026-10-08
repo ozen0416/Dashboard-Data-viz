@@ -91,98 +91,85 @@ Préparer la météo annuelle (jours chauds, pluie, ETP) à partir de ta table m
 
 Détail et interprétation des bases d'analyse dans le dossier notebook
 
-1. climat_annuel.csv
+## Prétraitements communs à CatNat
 
-Niveau : Gironde, moyenne des 19 stations (dont Mérignac). Période : 1954-2024. Une ligne : une année.
+Ils valent pour episodes_par_annee, benchmark, arretes_par_commune, heatmap_communes et lien_climat_catastrophes.
 
-Source : Météo-France, données mensuelles du département 33.
+Code INSEE converti en texte sur 5 caractères.
+Année de l’événement = année de date_debut.
+Période limitée à 1982-2022 (2023-2024 incomplets).
+8 types regroupés en 5 : Sécheresse / argiles, Inondations, Tempêtes, Mouvements de terrain, Autres.
 
-Ce qu’on a fait :
+## Résumé par table
 
-Conversion des colonnes en nombres et création de l’année à partir de AAAAMM.
-Pour chaque station et chaque année, calcul d’un total annuel (somme pour les jours et la pluie) ou d’une moyenne (pour la température).
-Filtre 1 : années complètes. On ne garde une station-année que si les 12 mois sont renseignés. Sinon, un mois manquant ferait paraître l’année artificiellement sèche ou fraîche.
+### `climat_annuel`
 
-Filtre 2 : stations longues. On ne garde que les stations ayant au moins 40 années complètes (en se basant sur NBJTX30), ce qui donne les 19 stations. Cela évite que l’ouverture ou la fermeture d’une station crée une fausse tendance.
-Moyenne des stations retenues, année par année.
+**Niveau et période :**  
+Gironde, 1954-2024, une ligne par année.
 
-Calcul du bilan hydrique (pluie moins évapotranspiration) et de deux moyennes mobiles sur 10 ans.
-Colonne	Signification
-annee	Année
-TX	Température maximale moyenne (°C)
-NBJTX30, NBJTX35	Jours par an où la température maximale dépasse 30 °C et 35 °C
-NBJTNS20	Nuits chaudes (seuil à confirmer dans la doc Météo-France)
-RR	Cumul annuel de pluie (mm)
-ETP	Évapotranspiration annuelle (mm)
-NBJRR30, NBJRR50	Jours de forte pluie (seuils 30 et 50 mm)
-bilan_hydrique	RR moins ETP : positif, l’eau est excédentaire, négatif, déficit
-NBJTX30_mm10, TX_mm10	Moyennes mobiles sur 10 ans, pour lisser la courbe
+**Prétraitements propres :**  
+Années complètes uniquement (12 mois) ; stations gardées si elles ont au moins 40 années complètes (19 stations) ; somme annuelle pour les jours et la pluie, moyenne pour la température ; moyenne des stations ; bilan hydrique (pluie − évapotranspiration) ; moyenne mobile sur 10 ans ; nombre de stations par année.
 
-Limites : le filtre « 12 mois » s’applique indicateur par indicateur, donc le nombre de stations peut varier d’une colonne à l’autre (surtout ETP, mesurée par moins de stations). C’est une moyenne de stations, pas un total départemental. Le climat obtenu est celui de la Gironde, pas de la métropole seule.
+**Ce qu’elle permet de voir :**  
+Le réchauffement (jours ≥ 30 °C), la sécheresse (bilan hydrique), les pluies extrêmes.
 
-2. episodes_par_annee.csv
 
-Niveau : Bordeaux Métropole entière (28 communes). Période : 1982-2022. Une ligne : une année.
+### `episodes_par_annee`
 
-Source : CatNat (GASPAR).
+**Niveau et période :**  
+Bordeaux Métropole (28 communes), 1982-2022, une ligne par année.
 
-Ce qu’on a fait :
+**Prétraitements propres :**  
+Filtre sur la métropole ; un épisode touchant plusieurs communes compté une seule fois ; comptage par année et par type ; années sans épisode mises à 0.
 
-Filtre sur libelle_epci = « Bordeaux Métropole » (28 communes).
-Année de l’événement prise sur date_debut (pas sur date_arrete, publiée avec retard).
-Coupure à 2022, parce que les arrêtés de 2023-2024 sont incomplets.
-Regroupement des 8 types en 5 : Sécheresse / argiles (les deux libellés fusionnés, car ils ne coexistent jamais la même année), Inondations, Tempêtes, Mouvements de terrain, Autres.
-Déduplication par épisode : une même catastrophe qui touche 28 communes donne 28 lignes dans CatNat. On garde une seule ligne par (groupe, date_debut, date_fin), donc l’épisode compte pour 1.
-Comptage par année et par groupe, avec 0 pour les années sans épisode.
+**Ce qu’elle permet de voir :**  
+L’évolution des catastrophes dans le temps, par type de risque.
 
-Colonnes : annee et une colonne par groupe (nombre d’épisodes).
 
-Limites : deux arrêtés du même événement avec des dates légèrement différentes comptent pour deux épisodes. CatNat mesure des événements reconnus administrativement, pas l’intensité physique.
+### `benchmark`
 
-3. benchmark.csv
+**Niveau et période :**  
+France, départements et métropoles, une ligne par territoire.
 
-Niveau : un territoire par ligne (métropoles, Gironde, France). Période : 1982-2022. Source : CatNat, France entière.
+**Prétraitements propres :**  
+Total d’arrêtés par territoire ; nombre de communes (référentiel toutes années) ; moyenne d’arrêtés par commune.
 
-Ce qu’on a fait :
+**Ce qu’elle permet de voir :**  
+La position de Bordeaux Métropole par rapport aux autres métropoles, à la Gironde et à la France.
 
-Pour chaque intercommunalité (libelle_epci), calcul du nombre total d’arrêtés (lignes commune-arrêté) et du nombre de communes concernées.
-Division des deux : arrêtés moyens par commune. Cela rend comparables une grande et une petite métropole.
-Filtre sur les intercommunalités dont le nom contient « métropole ».
-Ajout de deux lignes de référence : la Gironde et la France entière.
-Tri décroissant. Tous les types de catastrophe sont comptés ensemble.
 
-Colonnes : territoire, arretes_par_commune (vérifie les noms après l’export).
+### `arretes_par_commune`
 
-Limites : le nombre de communes ne compte que celles ayant eu au moins un arrêté, donc la moyenne est légèrement gonflée, surtout pour la France. Le filtre sur le mot « métropole » écarte les grandes agglomérations d’un autre statut (communauté urbaine, d’agglomération).
+**Niveau et période :**  
+France entière (environ 35 000 communes), une ligne par commune.
 
-4. heatmap_communes.csv
+**Prétraitements propres :**  
+Liste complète des communes, y compris celles sans arrêté ; total et détail par type de risque ; 0 si aucun arrêté ; tri décroissant.
 
-Niveau : les 28 communes de Bordeaux Métropole. Période : 1982-2022 (si tu as relancé avec la coupure). Une ligne : une commune.
+**Ce qu’elle permet de voir :**  
+Le classement national des communes et la place des communes de Bordeaux. 
+### Prendre departement = 33 pour se concentrer sur le département de bordeau
 
-Source : CatNat, partie métropole.
 
-Ce qu’on a fait :
+### `heatmap_communes`
 
-Mêmes regroupements en 5 types que pour les épisodes.
-Ici, on compte chaque arrêté par commune, sans dédupliquer, puisque la question est « combien de fois cette commune a été touchée ? ».
-Création d’une colonne total, puis tri décroissant pour voir les communes les plus touchées en premier.
+**Niveau et période :**  
+Les 28 communes de Bordeaux Métropole.
 
-Colonnes : libelle_geographique (nom de la commune), une colonne par groupe (nombre d’arrêtés), total.
+**Prétraitements propres :**  
+Simple filtre de `arretes_par_commune` sur la métropole.
 
-Limites : les 28 communes y figurent toutes, puisque c’est CatNat qui sert à les identifier. Cette table donne une exposition passée, pas la population concernée.
+**Ce qu’elle permet de voir :**  
+Quelle commune est touchée par quel risque, donc où agir en priorité.
 
-5. lien_climat_catastrophes.csv (à supprimer)
 
-Niveau : climat de la Gironde et épisodes de la métropole. Période : 1982-2022 (années présentes dans les deux). Une ligne : une année.
+### `lien_climat_catastrophes`
 
-C’est simplement climat_annuel et episodes_par_annee collés côte à côte sur l’année. Elle ne contient aucune information nouvelle : tu peux la supprimer et la recréer dans le dashboard en une ligne (climat.merge(episodes, on="annee")).
+**Niveau et période :**  
+Climat de la Gironde + épisodes de la métropole, 1982-2022, une ligne par année.
 
-Vue d’ensemble
-CSV	, Territoire, Période, 	Une ligne =	Sert à
+**Prétraitements propres :**  
+Jointure de `climat_annuel` et `episodes_par_annee` sur l’année (années communes seulement).
 
-climat_annuel,	Gironde, 	1954-2024, 	une année	Montrer le réchauffement et la sécheresse
-episodes_par_annee, Bordeaux Métropole,	1982-2022,	une année	Montrer l’évolution des catastrophes
-benchmark,	Territoires de France,	1982-2022,	un territoire	Situer Bordeaux par rapport aux autres
-heatmap_communes,	28 communes, 1982-2022,	une commune	Savoir où agir en priorité
-
-Tu as donc 4 CSV utiles, avec un seul niveau par table. Sans coordonnées, il n’y aura pas de carte, mais la heatmap et un classement des communes en barres répondent à la même question.
+**Ce qu’elle permet de voir :**  
+La relation entre le climat et les catastrophes (nuage de points, exploratoire : ce n’est pas une preuve de cause).
