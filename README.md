@@ -15,15 +15,9 @@ Agent immo / personne / entreprise dans la réigion de gironde / bordeau, object
 
 
 Le public et la question
-
-ON s'adresses à un décideur public : Bordeaux Métropole (la direction qui s'occupe des risques), les élus, ou la préfecture. La question devient :
-
-« Quels risques climatiques progressent à Bordeaux Métropole, et où faut-il investir en priorité pour protéger les habitants ? »
-Du risque à la mesure
-
 Problématique
 
-« Quels risques naturels pèsent le plus sur Bordeaux Métropole, comment évoluent-ils avec le changement climatique, et dans quelles communes une collectivité doit-elle agir en priorité ? »
+« Quel est le risque de catastrophe naturelle en Gironde, comment évolue-t-il, et dans quelle mesure le climat (chaleur, sécheresse, pluies extrêmes) l’aggrave-t-il ? Quels risques et quelles communes faut-il traiter en priorité ? (presentation des communes qui ont le plsu subis et presenter les commune les plus exposées aux risques) » »
 
 Le public visé est un décideur public (la métropole, la préfecture) qui doit prioriser ses investissements de prévention.
 
