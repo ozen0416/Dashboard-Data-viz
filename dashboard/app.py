@@ -28,7 +28,6 @@ def load(name, **kwargs):
 
 climat = load("climat_annuel")
 episodes = load("episodes_par_annee")
-benchmark = load("benchmark")
 heatmap = load("heatmap_communes", dtype=CODES)
 
 TYPES = ["Inondations", "Sécheresse / argiles", "Tempêtes", "Mouvements de terrain", "Autres"]
@@ -47,8 +46,6 @@ INDICATEURS = {
     "NBJRR50": ("Jours de très forte pluie (≥ 50 mm)", "jours"),
 }
 
-_bm = benchmark.query("territoire == 'Bordeaux Métropole'").iloc[0]
-_fr = benchmark.query("niveau == 'France'").iloc[0]
 
 YEAR_MIN, YEAR_MAX = int(climat.annee.min()), int(climat.annee.max())
 EP_MIN, EP_MAX = int(episodes.annee.min()), int(episodes.annee.max())
@@ -62,18 +59,21 @@ THEMES = {
         accent="#2a78d6", ref="#6f6e69", neutral="#c9c8c2",
         series=dict(zip(TYPES, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#8a8984"])),
         ramp=["#f0f5fc", "#9ec5f4", "#3987e5", "#1c5cab", "#0d366b"],
+        ordinal=["#86b6ef", "#5598e7", "#2a78d6", "#1c5cab", "#0d366b"],
     ),
     "sombre": dict(
         surface="#1e293b", text="#f1f5f9", muted="#94a3b8", grid="#334155",
         accent="#3987e5", ref="#a3a29b", neutral="#5c5b57",
         series=dict(zip(TYPES, ["#3987e5", "#d95926", "#199e70", "#c98500", "#8f8e88"])),
         ramp=["#24272c", "#184f95", "#3987e5", "#86b6ef", "#cde2fb"],
+        ordinal=["#256abf", "#3987e5", "#6da7ec", "#9ec5f4", "#cde2fb"],
     ),
     "contraste": dict(
         surface="#ffffff", text="#000000", muted="#000000", grid="#595959",
         accent="#0d366b", ref="#000000", neutral="#8a8a8a",
         series=dict(zip(TYPES, ["#1c5cab", "#c24a1c", "#0f7a54", "#a36f00", "#5c5b57"])),
         ramp=["#ffffff", "#9ec5f4", "#2a78d6", "#104281", "#000000"],
+        ordinal=["#5598e7", "#2a78d6", "#1c5cab", "#104281", "#000000"],
     ),
 }
 DEFAULT_PREFS = {"theme": "clair", "scale": 1.0, "patterns": False, "labels": False, "font": False}
@@ -177,11 +177,23 @@ def types_checklist(cid):
         id=cid, options=TYPES, value=TYPES, inline=True, className="choices"))
 
 
-def detail_body(cid, title, question, controls, note=None):
+def explorer(cid, year_min, year_max):
+    """Lecture d'une année au clavier : le curseur met le point en évidence et la valeur est annoncée."""
+    return html.Div([
+        html.Span("Explorer année par année (flèches ← →, ou saisir l'année)", id=f"{cid}-focus-label",
+                  className="explore-label"),
+        html.Div(dcc.Slider(id=f"{cid}-focus", min=year_min, max=year_max, step=1, value=year_max, marks={},
+                            tooltip={"placement": "bottom"}), className="explore-slider"),
+        html.P(id=f"{cid}-focus-text", className="explore-text", role="status", **{"aria-live": "polite"}),
+    ], className="explore", role="group", **{"aria-labelledby": f"{cid}-focus-label"})
+
+
+def detail_body(cid, title, question, controls, note=None, extra=None):
     """Contenu complet d'une fenêtre de détail : filtres, graphe, résumé, données."""
     return [
         html.P(question, className="question"),
         html.Div(controls, className="controls", role="group", **{"aria-label": f"Filtres : {title}"}),
+        extra,
         html.Div(dcc.Graph(id=f"{cid}-graph", config=GRAPH_CONFIG),
                  **{"aria-describedby": f"{cid}-summary"}),
         html.P(id=f"{cid}-summary", className="summary", **{"aria-live": "polite"}),
@@ -310,7 +322,8 @@ dialogs = [
          fieldset("Regroupement", dcc.RadioItems(
              id="clim-grain", value="annee", inline=True, className="choices",
              options=[{"label": "Par année", "value": "annee"},
-                      {"label": "Moyenne par décennie", "value": "decennie"}]))])),
+                      {"label": "Moyenne par décennie", "value": "decennie"}]))],
+        extra=explorer("clim", YEAR_MIN, YEAR_MAX))),
     dialog("scat", "Lien entre climat et catastrophes naturelles", detail_body(
         "scat", "Climat et catastrophes",
         "Relation exploratoire entre un indicateur climatique et les épisodes CatNat d'un type (une année = un point).",
@@ -318,7 +331,8 @@ dialogs = [
             id="scat-x", value="NBJTX30", clearable=False, options=CLIMAT_OPTIONS)),
          labelled("Type de catastrophe (axe vertical)", "scat-y", dcc.Dropdown(
              id="scat-y", value="Sécheresse / argiles", clearable=False, options=TYPES))],
-        note="Corrélation exploratoire sur environ 40 années : elle ne prouve pas un lien de cause à effet.")),
+        note="Corrélation exploratoire sur environ 40 années : elle ne prouve pas un lien de cause à effet.",
+        extra=explorer("scat", EP_MIN, EP_MAX))),
 ]
 
 app.layout = html.Div([
@@ -421,7 +435,7 @@ def tile_layout(fig, p, legend=False):
     return fig
 
 
-def detail_callback(cid, *inputs):
+def detail_callback(cid, *inputs, extra_outputs=()):
     """Un callback de graphique alimente la fenêtre de détail ET la vignette.
 
     La fonction renvoie (figure, résumé, tableau, figure_vignette, sous_titre) ; sans figure de
@@ -431,16 +445,19 @@ def detail_callback(cid, *inputs):
         @callback(Output(f"{cid}-graph", "figure"), Output(f"{cid}-mini", "figure"),
                   Output(f"{cid}-summary", "children"), Output(f"{cid}-short", "children"),
                   Output(f"{cid}-table", "children"), Output(f"{cid}-sub", "children"),
-                  Output(f"{cid}-store", "data"), *inputs)
+                  Output(f"{cid}-store", "data"), *extra_outputs, *inputs)
         def wrapper(*args):
-            fig, summary, table, mini, sub = (list(fn(*args)) + [None, ""])[:5]
+            res = list(fn(*args))
+            fig, summary, table, mini, sub = (res + [None, ""])[:5]
+            extras = (res[5:] + [""] * len(extra_outputs))[:len(extra_outputs)]
             store = None
             if isinstance(table, tuple):
                 df, caption = table
                 store = {"caption": caption, "columns": list(df.columns),
                          "rows": df.astype(object).where(df.notna(), None).values.tolist()}
                 table = html_table(df, caption)
-            return fig, mini if mini is not None else mini_fig(fig), summary, summary, table, sub, store
+            return (fig, mini if mini is not None else mini_fig(fig), summary, summary, table, sub, store,
+                    *extras)
 
         @callback(Output(f"{cid}-download", "data"), Input(f"{cid}-xlsx", "n_clicks"),
                   State(f"{cid}-store", "data"), prevent_initial_call=True)
@@ -501,7 +518,7 @@ def update_kpis(periode):
         first = clim[clim.annee < y0 + 10].NBJTX30.mean()
         last = clim[clim.annee > y1 - 10].NBJTX30.mean()
         diff = last - first
-        cards.append(kpi(f"Jours ≥ 30 °C / an : {y1 - 9}-{y1} vs {y0}-{y0 + 9}",
+        cards.append(kpi(f"Jours ≥ 30 °C moy / an  : {y1 - 9}-{y1}",
                          f"{signed(diff, 1)} j"))
     else:
         cards.append(kpi("Jours ≥ 30 °C / an (période ≥ 20 ans requise)", "-"))
@@ -511,22 +528,19 @@ def update_kpis(periode):
         totaux = ep[TYPES].sum()
         y_a, y_b = int(ep.annee.min()), int(ep.annee.max())
         par_decennie = totaux.sum() / ((y_b - y_a + 1) / 10)
-        cards.append(kpi(f"Épisodes CatNat {y_a}-{y_b} (≈ {fr(par_decennie)} / décennie)", fr(totaux.sum())))
+        cards.append(kpi(f"Nombres de catastrophes {y_a}-{y_b} (≈ {fr(par_decennie)} / décennie)", fr(totaux.sum())))
         top = totaux.idxmax()
         cards.append(kpi(f"Risque dominant ({fr(totaux[top] / totaux.sum() * 100)} % des épisodes)", top))
     else:
-        cards.append(kpi("Épisodes CatNat (données 1982-2022)", "-"))
+        cards.append(kpi("Nombres de catastrophes (données 1982-2022)", "-"))
         cards.append(kpi("Risque dominant", "-"))
-
-    ratio = _bm.arretes_par_commune / _fr.arretes_par_commune
-    cards.append(kpi("Arrêtés par commune : métropole vs France", f"× {fr(ratio, 1)}",
-                     f"{fr(_bm.arretes_par_commune, 1)} contre {fr(_fr.arretes_par_commune, 1)}"))
 
     c = heatmap.loc[heatmap.nb_arretes.idxmax()]
     risk = c[TYPES].astype(float).idxmax()
+    cards.append(kpi(f"Arrêtés CatNat · {c.libelle_geographique} (1982-2022)", fr(c.nb_arretes)))
     cards.append(kpi(f"Commune la plus touchée · {risk.lower()}", c.libelle_geographique))
 
-    note = f"Période {y0}-{y1} appliquée au climat et aux épisodes CatNat ; communes et benchmark : 1982-2022."
+    note = f"Période {y0}-{y1} appliquée au climat et aux épisodes CatNat ; communes : 1982-2022."
     return cards, note
 
 
@@ -609,6 +623,24 @@ def update_evol(types, grain, clim_ind, periode, prefs):
 # ---------------------------------------------------------------------------
 # Graphique : heatmap des communes
 # ---------------------------------------------------------------------------
+def commune_bars(df, types, p, share=False):
+    """Barres horizontales empilées par type de risque, total écrit au bout de chaque barre."""
+    t = p["t"]
+    fig = go.Figure()
+    for r in types:
+        fig.add_bar(y=df.index, x=df[r], name=r, orientation="h", marker=bar_marker(r, p),
+                    text=df[r].where(df[r] > 0) if p["labels"] else None, textposition="inside",
+                    hovertemplate=f"<b>%{{y}}</b><br>{r} : %{{x:.0f}}{' %' if share else ' arrêté(s)'}<extra></extra>")
+    fig.update_layout(barmode="stack", barcornerradius=0, bargap=0.25, barnorm="percent" if share else None)
+    if not share:
+        fig.add_scatter(y=df.index, x=df.Total, mode="text", text=[fr(v) for v in df.Total],
+                        textposition="middle right", showlegend=False, cliponaxis=False, hoverinfo="skip",
+                        textfont=dict(size=12 * p["scale"], color=t["text"], weight="bold"))
+        fig.update_xaxes(range=[0, df.Total.max() * 1.12])
+    fig.update_yaxes(tickmode="array", tickvals=list(df.index))
+    return fig
+
+
 @detail_callback("heat",
           Input("heat-types", "value"), Input("heat-mode", "value"), Input("heat-sort", "value"),
           Input("heat-communes", "value"), Input("prefs", "data"))
@@ -626,19 +658,14 @@ def update_heat(types, mode, sort, selection, prefs):
         df = df.sort_index(ascending=False)
     else:
         df = df.sort_values("Total" if sort == "total" or sort not in types else sort)
-    values = df[types].div(df.Total.replace(0, np.nan), axis=0) * 100 if mode == "share" else df[types]
-    unit = "%" if mode == "share" else "arrêtés"
+    share = mode == "share"
+    values = df[types].div(df.Total.replace(0, np.nan), axis=0) * 100 if share else df[types]
+    unit = "%" if share else "arrêtés"
 
-    t = p["t"]
-    fig = go.Figure(go.Heatmap(
-        z=values.values, x=types, y=values.index, xgap=2, ygap=2,
-        colorscale=[[i / (len(t["ramp"]) - 1), c] for i, c in enumerate(t["ramp"])],
-        texttemplate="%{z:.0f}", textfont_size=12 * p["scale"],
-        colorbar=dict(title=dict(text=unit, font_color=t["text"]), tickfont_color=t["text"]),
-        hovertemplate="<b>%{y}</b><br>%{x} : %{z:.0f} " + unit + "<extra></extra>"))
-    fig.update_xaxes(side="top", showgrid=False)
-    fig.update_yaxes(showgrid=False)
-    style_fig(fig, p, height=max(320, 26 * len(df) + 80), legend=False)
+    # Détail : le même graphique que la vignette, pour toutes les communes sélectionnées.
+    fig = commune_bars(df, types, p, share=share)
+    fig.update_xaxes(title_text="Part des arrêtés de la commune (%)" if share else "Nombre d'arrêtés CatNat")
+    style_fig(fig, p, height=max(360, 24 * len(df) + 110))
 
     top = df.Total.idxmax()
     best = df[types].stack().idxmax()
@@ -647,19 +674,12 @@ def update_heat(types, mode, sort, selection, prefs):
                f"({fr(df[types].stack().max())} arrêtés).")
     table = values.round(1).reset_index().rename(columns={"libelle_geographique": "Commune"}).iloc[::-1]
 
-    # Vignette : les 10 communes les plus touchées, barres empilées par type et total écrit.
-    mini = go.Figure()
-    for r in types:
-        mini.add_bar(y=top10.index, x=top10[r], name=r, orientation="h", marker=bar_marker(r, p))
-    mini.add_scatter(y=top10.index, x=top10.Total, mode="text", text=[fr(v) for v in top10.Total],
-                     textposition="middle right", showlegend=False, cliponaxis=False,
-                     textfont=dict(size=12 * p["scale"], color=t["text"], weight="bold"))
-    mini.update_layout(barmode="stack", barcornerradius=0, bargap=0.25)
-    mini.update_xaxes(range=[0, top10.Total.max() * 1.12])
+    # Vignette : les 10 communes les plus touchées.
+    mini = commune_bars(top10, types, p)
     tile_layout(mini, p, legend=True)
     mini.update_layout(legend=dict(orientation="v", x=1.02, xanchor="left", y=0.5, yanchor="middle"),
                        margin=dict(t=6))
-    mini.update_yaxes(tickmode="array", tickvals=list(top10.index), tickfont_size=11 * p["scale"])
+    mini.update_yaxes(tickfont_size=11 * p["scale"])
     sub = f"Arrêtés CatNat 1982-2022 · les {len(top10)} communes les plus touchées sur {len(df)}"
     return fig, summary, (table, f"Arrêtés par commune et par type ({unit})"), mini, sub
 
@@ -667,10 +687,18 @@ def update_heat(types, mode, sort, selection, prefs):
 # ---------------------------------------------------------------------------
 # Graphique : indicateur climatique
 # ---------------------------------------------------------------------------
+@callback(Output("clim-focus", "min"), Output("clim-focus", "max"), Output("clim-focus", "value"),
+          Input("periode", "value"), State("clim-focus", "value"))
+def sync_clim_focus(periode, year):
+    y0, y1 = periode
+    return y0, y1, min(max(year or y1, y0), y1)
+
+
 @detail_callback("clim",
           Input("clim-ind", "value"), Input("clim-opts", "value"), Input("clim-grain", "value"),
-          Input("periode", "value"), Input("prefs", "data"))
-def update_clim(ind, opts, grain, periode, prefs):
+          Input("periode", "value"), Input("clim-focus", "value"), Input("prefs", "data"),
+          extra_outputs=(Output("clim-focus-text", "children"),))
+def update_clim(ind, opts, grain, periode, focus, prefs):
     p = get_prefs(prefs)
     t = p["t"]
     label, unit = INDICATEURS[ind]
@@ -687,7 +715,8 @@ def update_clim(ind, opts, grain, periode, prefs):
         table = d[["x", ind]].rename(columns={"x": "Décennie", ind: f"{label} ({unit})"}).round(1)
     else:
         fig.add_scatter(x=df.annee, y=df[ind], name="Valeur annuelle", mode="lines+markers",
-                        line=dict(color=t["accent"], width=2), marker=dict(size=7),
+                        line=dict(color=t["accent"], width=2),
+                        marker=dict(size=7, symbol="circle", line=dict(color=t["surface"], width=1)),
                         text=df[ind].round(1) if p["labels"] else None,
                         hovertemplate=f"%{{x}} : %{{y:.1f}} {unit}<extra></extra>")
         if "mm10" in opts:
@@ -709,9 +738,32 @@ def update_clim(ind, opts, grain, periode, prefs):
                       annotation_text="0 : pluie = évapotranspiration", annotation_font_color=t["text"])
     fig.update_yaxes(title_text=f"{label} ({unit})")
     style_fig(fig, p, height=420)
+    fig.update_layout(hovermode="x unified")
 
     if df.empty:
         return fig, "Aucune donnée sur la période.", ""
+
+    # Année explorée au clavier : mise en évidence sur le graphique + phrase annoncée.
+    focus_text = ""
+    row = df[df.annee == focus]
+    if len(row):
+        row = row.iloc[0]
+        val = row[ind]
+        if grain == "decennie":
+            x_focus = next((xx for xx in d.x if int(xx[:4]) <= focus <= int(xx[-4:])), None)
+        else:
+            x_focus = focus
+        fig.add_vline(x=x_focus, line_color=t["text"], line_dash="dot", line_width=1.5)
+        if grain == "annee":
+            fig.add_scatter(x=[focus], y=[val], mode="markers", showlegend=False, hoverinfo="skip",
+                            marker=dict(size=16, symbol="circle-open", color=t["text"], line=dict(width=3)))
+        rang = int((df[ind] > val).sum()) + 1
+        focus_text = f"{int(focus)} : {fr(val, 1)} {unit}"
+        if pd.notna(row.mm10):
+            ecart = val - row.mm10
+            focus_text += (f" ; moyenne sur 10 ans : {fr(row.mm10, 1)} {unit} "
+                           f"({'+' if ecart >= 0 else '−'}{fr(abs(ecart), 1)} {unit} par rapport à cette moyenne)")
+        focus_text += f". Rang : {rang}ᵉ valeur la plus élevée sur {len(df)} années."
     i_max = df[ind].idxmax()
     summary = (f"{label} : moyenne {fr(df[ind].mean(), 1)} {unit} entre {periode[0]} et {periode[1]}. "
                f"Maximum en {int(df.loc[i_max, 'annee'])} ({fr(df.loc[i_max, ind], 1)} {unit}).")
@@ -727,7 +779,9 @@ def update_clim(ind, opts, grain, periode, prefs):
                      textposition="outside", cliponaxis=False)
         sub = f"{label} ({unit}) · moyenne par décennie"
     else:
-        mini.add_bar(x=df.annee, y=df[ind], marker_color=t["accent"], opacity=0.35, name="Chaque année")
+        mini.add_bar(x=df.annee, y=df[ind], name="Chaque année",
+                     marker=dict(color=t["accent"], opacity=0.6 if p["theme"] == "contraste" else 0.35,
+                                 pattern_shape="/" if p["patterns"] else ""))
         ma = df.dropna(subset=["mm10"])
         mini.add_scatter(x=ma.annee, y=ma.mm10, mode="lines", name="Moyenne sur 10 ans",
                          line=dict(color=t["ramp"][3], width=4))
@@ -740,7 +794,8 @@ def update_clim(ind, opts, grain, periode, prefs):
         mini.add_hline(y=0, line_color=t["muted"])
     mini.update_layout(barcornerradius=1, bargap=0.15)
     tile_layout(mini, p)
-    return fig, [summary, html.Br(), stations], (table, f"{label} par période"), mini, sub
+    mini.update_yaxes(title_text=unit, title_font_size=11 * p["scale"])
+    return fig, [summary, html.Br(), stations], (table, f"{label} par période"), mini, sub, focus_text
 
 
 # ---------------------------------------------------------------------------
@@ -749,31 +804,64 @@ def update_clim(ind, opts, grain, periode, prefs):
 lien = load("lien_climat_catastrophes")
 
 
+DECADE_SYMBOLS = ["circle", "square", "diamond", "triangle-up", "star"]
+
+
+@callback(Output("scat-focus", "min"), Output("scat-focus", "max"), Output("scat-focus", "value"),
+          Input("periode", "value"), State("scat-focus", "value"))
+def sync_scat_focus(periode, year):
+    y0, y1 = max(periode[0], EP_MIN), min(periode[1], EP_MAX)
+    y1 = max(y0, y1)
+    return y0, y1, min(max(year or y1, y0), y1)
+
+
 @detail_callback("scat",
-          Input("scat-x", "value"), Input("scat-y", "value"), Input("periode", "value"), Input("prefs", "data"))
-def update_scat(x, y, periode, prefs):
+          Input("scat-x", "value"), Input("scat-y", "value"), Input("periode", "value"),
+          Input("scat-focus", "value"), Input("prefs", "data"),
+          extra_outputs=(Output("scat-focus-text", "children"),))
+def update_scat(x, y, periode, focus, prefs):
     p = get_prefs(prefs)
     t = p["t"]
     df = clip_years(lien, periode)
     if len(df) < 3:
         return empty_fig(p, "Période trop courte (données communes 1982-2022)."), "", ""
     label, unit = INDICATEURS[x]
-    fig = go.Figure(go.Scatter(
-        x=df[x], y=df[y], mode="markers+text" if p["labels"] else "markers",
-        text=df.annee, textposition="top center", textfont_size=10 * p["scale"],
-        marker=dict(size=11, color=df.annee, colorscale=[[0, t["ramp"][1]], [1, t["ramp"][4]]],
-                    line=dict(color=t["surface"], width=2),
-                    colorbar=dict(title=dict(text="Année", font_color=t["text"]), tickfont_color=t["text"])),
-        hovertemplate=f"<b>%{{text}}</b><br>{label} : %{{x:.1f}} {unit}<br>{y} : %{{y}} épisode(s)<extra></extra>"))
+    # Une série par décennie : couleur (du clair au foncé) ET forme de point, jamais la couleur seule.
+    fig = go.Figure()
+    decennies = df.annee // 10 * 10
+    for i, dec in enumerate(sorted(decennies.unique())):
+        dd = df[decennies == dec]
+        fig.add_scatter(
+            x=dd[x], y=dd[y], name=f"{dd.annee.min()}-{dd.annee.max()}",
+            mode="markers+text" if p["labels"] else "markers",
+            text=dd.annee, textposition="top center", textfont_size=10 * p["scale"],
+            marker=dict(size=12, color=t["ordinal"][i % 5], symbol=DECADE_SYMBOLS[i % 5],
+                        line=dict(color=t["text"] if p["theme"] == "contraste" else t["surface"], width=1.5)),
+            hovertemplate=f"<b>%{{text}}</b><br>{label} : %{{x:.1f}} {unit}<br>{y} : %{{y}} épisode(s)<extra></extra>")
     r = df[x].corr(df[y])
     if df[x].nunique() > 1:
         a, b = np.polyfit(df[x], df[y], 1)
         xs = np.linspace(df[x].min(), df[x].max(), 50)
         fig.add_scatter(x=xs, y=a * xs + b, mode="lines", line=dict(color=t["ref"], dash="dot", width=2),
-                        hoverinfo="skip", showlegend=False)
+                        hoverinfo="skip", name="Tendance")
     fig.update_xaxes(title_text=f"{label} ({unit})")
-    fig.update_yaxes(title_text=f"Épisodes : {y}")
-    style_fig(fig, p, height=420, legend=False)
+    fig.update_yaxes(title_text=f"Épisodes par an : {y}")
+    style_fig(fig, p, height=440)
+
+    # Année explorée au clavier.
+    focus_text = ""
+    row = df[df.annee == focus]
+    if len(row):
+        row = row.iloc[0]
+        fig.add_scatter(x=[row[x]], y=[row[y]], mode="markers+text", showlegend=False, hoverinfo="skip",
+                        text=[f"<b>{int(focus)}</b>"], textposition="middle right",
+                        textfont=dict(size=13 * p["scale"], color=t["text"]),
+                        marker=dict(size=22, symbol="circle-open", color=t["text"], line=dict(width=3)))
+        focus_text = f"{int(focus)} : {fr(row[x], 1)} {unit} ; {fr(row[y])} épisode(s) « {y} »."
+        if df[x].nunique() > 1:
+            prevu = a * row[x] + b
+            pos = "au-dessus de" if row[y] > prevu + 0.05 else "en dessous de" if row[y] < prevu - 0.05 else "sur"
+            focus_text += f" La tendance prévoit {fr(max(prevu, 0), 1)} épisode(s) : année {pos} la tendance."
 
     force = "forte" if abs(r) >= 0.5 else "modérée" if abs(r) >= 0.3 else "faible"
     summary = (f"{len(df)} années. Corrélation {force} {'positive' if r >= 0 else 'négative'} "
@@ -785,7 +873,8 @@ def update_scat(x, y, periode, prefs):
     # Vignette : nuage de points, droite de tendance et force du lien écrite en clair.
     mini = go.Figure(go.Scatter(
         x=df[x], y=df[y], mode="markers",
-        marker=dict(size=11, color=t["accent"], opacity=0.8, line=dict(color=t["surface"], width=1.5))))
+        marker=dict(size=11, color=t["accent"], opacity=1 if p["theme"] == "contraste" else 0.8,
+                    line=dict(color=t["text"] if p["theme"] == "contraste" else t["surface"], width=1.5))))
     if df[x].nunique() > 1:
         mini.add_scatter(x=xs, y=a * xs + b, mode="lines", line=dict(color=t["text"], dash="dash", width=2))
     mini.add_annotation(xref="paper", yref="paper", x=0.01, y=0.99, xanchor="left", yanchor="top",
@@ -796,7 +885,7 @@ def update_scat(x, y, periode, prefs):
     mini.update_xaxes(title_text=f"{label} ({unit})", title_font_size=11 * p["scale"], showgrid=True, griddash="dot")
     mini.update_yaxes(title_text="Épisodes / an", title_font_size=11 * p["scale"], rangemode="tozero")
     sub = f"Une année = un point · épisodes « {y} » selon {label[0].lower() + label[1:]}"
-    return fig, summary, (table, "Climat et catastrophes par année"), mini, sub
+    return fig, summary, (table, "Climat et catastrophes par année"), mini, sub, focus_text
 
 
 if __name__ == "__main__":
