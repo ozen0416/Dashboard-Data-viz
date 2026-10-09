@@ -6,13 +6,14 @@ Lancement (depuis la racine du projet) :
 puis ouvrir http://127.0.0.1:8050
 """
 
+from datetime import date
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from dash import Dash, html, dcc, callback, clientside_callback, Input, Output
+from dash import Dash, html, dcc, callback, clientside_callback, Input, Output, State, no_update
 
 # ---------------------------------------------------------------------------
 # Données
@@ -185,6 +186,14 @@ def detail_body(cid, title, question, controls, note=None):
                  **{"aria-describedby": f"{cid}-summary"}),
         html.P(id=f"{cid}-summary", className="summary", **{"aria-live": "polite"}),
         html.P(note, className="note") if note else None,
+        html.Div([
+            html.Button("Télécharger les données (Excel)", id=f"{cid}-xlsx", type="button", className="btn-export",
+                        **{"aria-describedby": f"{cid}-xlsx-hint"}),
+            html.Span("Fichier .xlsx avec les valeurs affichées et les filtres actuels.",
+                      id=f"{cid}-xlsx-hint", className="note"),
+            dcc.Download(id=f"{cid}-download"),
+            dcc.Store(id=f"{cid}-store"),
+        ], className="data-actions"),
         html.Details([html.Summary("Afficher les données sous forme de tableau"),
                       html.Div(id=f"{cid}-table")]),
     ]
@@ -262,18 +271,18 @@ a11y_dialog = dialog("a11y", "Options d'accessibilité", html.Div([
 CLIMAT_OPTIONS = [{"label": f"{v[0]} ({v[1]})", "value": k} for k, v in INDICATEURS.items()]
 
 dialogs = [
-    dialog("evol", "Évolution des catastrophes dans la métropole", detail_body(
+    dialog("evol", "Fréquence des catastrophes naturelles dans la métropole", detail_body(
         "evol", "Évolution des catastrophes",
         "Quels risques reviennent, et se multiplient-ils ? (épisodes CatNat, 28 communes, 1982-2022)",
         [types_checklist("evol-types"),
          fieldset("Regroupement", dcc.RadioItems(
-             id="evol-grain", value="annee", inline=True, className="choices",
-             options=[{"label": "Par année", "value": "annee"},
-                      {"label": "Par décennie", "value": "decennie"}])),
+             id="evol-grain", value="decennie", inline=True, className="choices",
+             options=[{"label": "Par décennie (moyenne par an)", "value": "decennie"},
+                      {"label": "Par année", "value": "annee"}])),
          labelled("Indicateur climatique à comparer (graphique dessous)", "evol-climat", dcc.Dropdown(
              id="evol-climat", value="none", clearable=False,
              options=[{"label": "Aucun", "value": "none"}] + CLIMAT_OPTIONS))])),
-    dialog("heat", "Les 28 communes de la métropole par type de risque", detail_body(
+    dialog("heat", "Exposition des 28 communes de la métropole par type de risque", detail_body(
         "heat", "Communes par type de risque",
         "Quelle commune est touchée par quel risque ? (nombre d'arrêtés CatNat 1982-2022)",
         [types_checklist("heat-types"),
@@ -289,7 +298,7 @@ dialogs = [
          labelled("Limiter à certaines communes (vide = toutes)", "heat-communes", dcc.Dropdown(
              id="heat-communes", multi=True, placeholder="Toutes les communes",
              options=sorted(heatmap.libelle_geographique)))])),
-    dialog("clim", "Évolution d'un indicateur climatique (Gironde)", detail_body(
+    dialog("clim", "Évolution du climat en Gironde", detail_body(
         "clim", "Indicateur climatique",
         "Le climat se réchauffe-t-il ? Les sécheresses et les pluies extrêmes évoluent-elles ?",
         [labelled("Indicateur (température, pluviométrie...)", "clim-ind", dcc.Dropdown(
@@ -302,7 +311,7 @@ dialogs = [
              id="clim-grain", value="annee", inline=True, className="choices",
              options=[{"label": "Par année", "value": "annee"},
                       {"label": "Moyenne par décennie", "value": "decennie"}]))])),
-    dialog("scat", "Le climat évolue-t-il avec les catastrophes ?", detail_body(
+    dialog("scat", "Lien entre climat et catastrophes naturelles", detail_body(
         "scat", "Climat et catastrophes",
         "Relation exploratoire entre un indicateur climatique et les épisodes CatNat d'un type (une année = un point).",
         [labelled("Indicateur climatique (axe horizontal)", "scat-x", dcc.Dropdown(
@@ -316,8 +325,9 @@ app.layout = html.Div([
     html.A("Aller aux graphiques", href="#graphiques", className="skip-link"),
     dcc.Store(id="prefs"),
     html.Header([
+        html.Div(className="topbar-side", **{"aria-hidden": "true"}),
         html.H1("Risques naturels et climat à Bordeaux Métropole"),
-        html.Div([
+        html.Div([html.Div([
             html.Span("Période", id="periode-label", className="slicer-label"),
             html.Div(dcc.RangeSlider(
                 id="periode", min=YEAR_MIN, max=YEAR_MAX, step=1, value=[YEAR_MIN, YEAR_MAX], marks={},
@@ -326,6 +336,7 @@ app.layout = html.Div([
         ], className="periode", role="group", **{"aria-labelledby": "periode-label"}),
         html.Button("Accessibilité", type="button", className="btn",
                     **{"data-dialog-open": "dlg-a11y", "aria-haspopup": "dialog", "aria-controls": "dlg-a11y"}),
+        ], className="topbar-side topbar-right"),
     ], className="topbar"),
     html.Section([
         html.H2("Indicateurs clés", className="sr-only"),
@@ -334,10 +345,10 @@ app.layout = html.Div([
     html.Main([
         html.H2("Graphiques - sélectionner un visuel pour afficher le détail", className="sr-only"),
         html.Div([
-            tile("heat", "Communes × type de risque"),
-            tile("clim", "Indicateur climatique"),
-            tile("evol", "Évolution des catastrophes"),
-            tile("scat", "Climat × catastrophes"),
+            tile("heat", "Communes les plus exposées par type de risque"),
+            tile("clim", "Évolution du climat en Gironde"),
+            tile("evol", "Fréquence des catastrophes naturelles"),
+            tile("scat", "Lien entre climat et catastrophes naturelles"),
         ], className="tile-grid"),
     ], id="graphiques", tabIndex=-1),
     html.Footer([
@@ -419,12 +430,52 @@ def detail_callback(cid, *inputs):
     def deco(fn):
         @callback(Output(f"{cid}-graph", "figure"), Output(f"{cid}-mini", "figure"),
                   Output(f"{cid}-summary", "children"), Output(f"{cid}-short", "children"),
-                  Output(f"{cid}-table", "children"), Output(f"{cid}-sub", "children"), *inputs)
+                  Output(f"{cid}-table", "children"), Output(f"{cid}-sub", "children"),
+                  Output(f"{cid}-store", "data"), *inputs)
         def wrapper(*args):
             fig, summary, table, mini, sub = (list(fn(*args)) + [None, ""])[:5]
-            return fig, mini if mini is not None else mini_fig(fig), summary, summary, table, sub
+            store = None
+            if isinstance(table, tuple):
+                df, caption = table
+                store = {"caption": caption, "columns": list(df.columns),
+                         "rows": df.astype(object).where(df.notna(), None).values.tolist()}
+                table = html_table(df, caption)
+            return fig, mini if mini is not None else mini_fig(fig), summary, summary, table, sub, store
+
+        @callback(Output(f"{cid}-download", "data"), Input(f"{cid}-xlsx", "n_clicks"),
+                  State(f"{cid}-store", "data"), prevent_initial_call=True)
+        def download(_, store):
+            return excel_download(store, EXPORT_NAMES[cid]) if store else no_update
         return fn
     return deco
+
+
+EXPORT_NAMES = {
+    "heat": "communes_par_type_de_risque",
+    "clim": "evolution_climat_gironde",
+    "evol": "frequence_catastrophes_metropole",
+    "scat": "lien_climat_catastrophes",
+}
+SOURCES = "Arrêtés CatNat (data.gouv.fr, 1982-2022) ; Météo-France, données mensuelles Gironde 1950-2024"
+
+
+def excel_download(store, name):
+    """Fichier Excel : feuille « Données » (colonnes ajustées) + feuille « Description »."""
+    df = pd.DataFrame(store["rows"], columns=store["columns"])
+    info = pd.DataFrame({"Information": ["Contenu", "Sources", "Exporté le"],
+                         "Valeur": [store["caption"], SOURCES, date.today().strftime("%d/%m/%Y")]})
+
+    def write(buffer):
+        with pd.ExcelWriter(buffer, engine="openpyxl") as xw:
+            for sheet, data in (("Données", df), ("Description", info)):
+                data.to_excel(xw, sheet_name=sheet, index=False)
+                ws = xw.sheets[sheet]
+                ws.freeze_panes = "A2"
+                for col in ws.columns:
+                    width = max(len(str(c.value)) if c.value is not None else 0 for c in col)
+                    ws.column_dimensions[col[0].column_letter].width = min(width + 2, 80)
+
+    return dcc.send_bytes(write, f"{name}_{date.today():%Y%m%d}.xlsx")
 
 
 # ---------------------------------------------------------------------------
@@ -483,10 +534,9 @@ def update_kpis(periode):
 # Graphique : évolution des épisodes dans la métropole
 # ---------------------------------------------------------------------------
 def by_decade(df, cols, how="sum"):
-    g = df.assign(periode=(df.annee // 10 * 10)).groupby("periode")[cols]
-    out = (g.sum() if how == "sum" else g.mean()).reset_index()
-    last = df.annee.max()
-    out["x"] = out.periode.map(lambda d: f"{d}-{min(d + 9, last)}")
+    g = df.assign(periode=(df.annee // 10 * 10)).groupby("periode")
+    out = (g[cols].sum() if how == "sum" else g[cols].mean()).reset_index()
+    out["x"] = [f"{a}-{b}" for a, b in zip(g.annee.min(), g.annee.max())]
     return out
 
 
@@ -501,9 +551,10 @@ def update_evol(types, grain, clim_ind, periode, prefs):
         return empty_fig(p, "Aucune donnée : sélectionner au moins un type et une période entre 1982 et 2022."), "", ""
 
     if grain == "decennie":
-        data = by_decade(ep, types)
+        data = by_decade(ep, types, "mean")
     else:
         data = ep[["annee"] + types].assign(x=ep.annee)
+    fmt = ".1f" if grain == "decennie" else ""
 
     with_clim = clim_ind != "none"
     fig = make_subplots(rows=2 if with_clim else 1, cols=1, shared_xaxes=True,
@@ -512,9 +563,12 @@ def update_evol(types, grain, clim_ind, periode, prefs):
         fig.add_scatter(x=data.x, y=data[t], name=t, mode="lines+markers+text" if p["labels"] else "lines+markers",
                         **line_style(t, p), row=1, col=1, text=data[t].where(data[t] > 0) if p["labels"] else None,
                         textposition="top center",
-                        hovertemplate=f"{t} : %{{y}} épisode(s)<extra></extra>")
+                        hovertemplate=f"{t} : %{{y:{fmt}}}<extra></extra>")
     fig.update_layout(hovermode="x unified")
-    fig.update_yaxes(title_text="Épisodes", rangemode="tozero", row=1, col=1)
+    fig.update_yaxes(title_text="Épisodes par an (moyenne)" if grain == "decennie" else "Épisodes",
+                     rangemode="tozero", row=1, col=1)
+    if grain == "decennie":
+        fig.update_xaxes(type="category")
 
     if with_clim:
         label, unit = INDICATEURS[clim_ind]
@@ -530,10 +584,12 @@ def update_evol(types, grain, clim_ind, periode, prefs):
 
     totals = data[types].sum(axis=1)
     rec = data.loc[totals.idxmax()]
-    sums = data[types].sum()
+    sums = ep[types].sum()
+    pic = (f"{fr(totals.max(), 1)} épisodes par an en moyenne" if grain == "decennie"
+           else f"{fr(totals.max())} épisodes")
     summary = (f"{fr(sums.sum())} épisodes sur la période. Type le plus fréquent : {sums.idxmax()} "
-               f"({fr(sums.max())}). Pic : {rec.x} avec {fr(totals.max())} épisodes.")
-    table = data[["x"] + types].rename(columns={"x": "Décennie" if grain == "decennie" else "Année"})
+               f"({fr(sums.max())}). Pic : {rec.x} avec {pic}.")
+    table = data[["x"] + types].round(2).rename(columns={"x": "Décennie" if grain == "decennie" else "Année"})
 
     # Vignette : une courbe par type, moyenne d'épisodes par an sur chaque décennie
     # (comparable même pour les décennies incomplètes 1982-89 et 2020-22).
@@ -547,7 +603,7 @@ def update_evol(types, grain, clim_ind, periode, prefs):
     mini.update_yaxes(rangemode="tozero")
     tile_layout(mini, p, legend=True)
     sub = "Épisodes par an (moyenne de chaque décennie), par type de risque"
-    return fig, summary, html_table(table, "Épisodes CatNat par période et par type"), mini, sub
+    return fig, summary, (table, "Épisodes CatNat par période et par type"), mini, sub
 
 
 # ---------------------------------------------------------------------------
@@ -605,7 +661,7 @@ def update_heat(types, mode, sort, selection, prefs):
                        margin=dict(t=6))
     mini.update_yaxes(tickmode="array", tickvals=list(top10.index), tickfont_size=11 * p["scale"])
     sub = f"Arrêtés CatNat 1982-2022 · les {len(top10)} communes les plus touchées sur {len(df)}"
-    return fig, summary, html_table(table, f"Arrêtés par commune et par type ({unit})"), mini, sub
+    return fig, summary, (table, f"Arrêtés par commune et par type ({unit})"), mini, sub
 
 
 # ---------------------------------------------------------------------------
@@ -684,7 +740,7 @@ def update_clim(ind, opts, grain, periode, prefs):
         mini.add_hline(y=0, line_color=t["muted"])
     mini.update_layout(barcornerradius=1, bargap=0.15)
     tile_layout(mini, p)
-    return fig, [summary, html.Br(), stations], html_table(table, f"{label} par période"), mini, sub
+    return fig, [summary, html.Br(), stations], (table, f"{label} par période"), mini, sub
 
 
 # ---------------------------------------------------------------------------
@@ -740,7 +796,7 @@ def update_scat(x, y, periode, prefs):
     mini.update_xaxes(title_text=f"{label} ({unit})", title_font_size=11 * p["scale"], showgrid=True, griddash="dot")
     mini.update_yaxes(title_text="Épisodes / an", title_font_size=11 * p["scale"], rangemode="tozero")
     sub = f"Une année = un point · épisodes « {y} » selon {label[0].lower() + label[1:]}"
-    return fig, summary, html_table(table, "Climat et catastrophes par année"), mini, sub
+    return fig, summary, (table, "Climat et catastrophes par année"), mini, sub
 
 
 if __name__ == "__main__":

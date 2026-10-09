@@ -59,8 +59,13 @@ a { color: var(--accent); }
   padding: 0.6rem 20px 0.3rem; box-sizing: border-box;
 }
 
-.topbar { display: flex; align-items: center; gap: 0.5rem 1.25rem; flex-wrap: wrap; }
-.topbar h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; margin: 0; flex: 1 1 auto; }
+/* Titre centré sur la page ; période et accessibilité restent à droite. */
+.topbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; }
+.topbar h1 {
+  grid-column: 2; margin: 0; text-align: center; max-width: 24ch;
+  font-size: clamp(1.4rem, 1.1rem + 0.9vw, 2rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15;
+}
+.topbar-right { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 1.25rem; }
 .btn {
   font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 0.4rem 1rem; min-height: 36px;
   color: var(--accent-text); background: var(--accent); border: 1px solid var(--accent); border-radius: 999px;
@@ -139,6 +144,16 @@ footer { color: var(--muted); font-size: 0.7rem; text-align: center; }
 .dialog-body { padding: 0.9rem 1.25rem 1.25rem; }
 body:has(dialog[open]) { overflow: hidden; }
 
+.data-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0.5rem 0; }
+.data-actions .note { font-size: 0.8rem; }
+.btn-export {
+  font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; min-height: 36px; padding: 0.35rem 1rem;
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  color: #ffffff; background: #1d6f42; border: 1px solid #1d6f42; border-radius: 999px;
+}
+.btn-export::before { content: "↓" / ""; font-weight: 700; }
+.btn-export:hover { filter: brightness(1.1); }
+:root[data-theme="contraste"] .btn-export { background: #000000; border-color: #000000; }
 .question { color: var(--muted); margin: 0 0 0.75rem; }
 .summary { font-weight: 500; }
 .note { color: var(--muted); font-size: 0.9rem; }
@@ -166,6 +181,9 @@ details summary { cursor: pointer; font-weight: 600; min-height: 32px; }
 /* ---- Petits écrans, texte agrandi, zoom : la page redevient défilante (reflow WCAG 1.4.10) ---- */
 @media (max-width: 1000px), (max-height: 600px) {
   .app { height: auto; }
+  .topbar { grid-template-columns: 1fr; justify-items: center; }
+  .topbar h1, .topbar-right { grid-column: 1; justify-self: center; }
+  .topbar-side:not(.topbar-right) { display: none; }
   .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
   .tile-grid { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-rows: 340px; }
 }
