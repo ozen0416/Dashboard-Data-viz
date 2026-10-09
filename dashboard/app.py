@@ -504,24 +504,14 @@ def kpi(label, value, sub=None):
                      html.P(sub, className="kpi-sub") if sub else None], className="kpi")
 
 
-def signed(x, dec=0):
-    return f"{'+' if x >= 0 else '−'}{fr(abs(x), dec)}"
-
-
 @callback(Output("kpis", "children"), Output("periode-text", "children"), Input("periode", "value"))
 def update_kpis(periode):
     y0, y1 = periode
     cards = []
 
     clim = clip_years(climat, periode)
-    if y1 - y0 + 1 >= 20:
-        first = clim[clim.annee < y0 + 10].NBJTX30.mean()
-        last = clim[clim.annee > y1 - 10].NBJTX30.mean()
-        diff = last - first
-        cards.append(kpi(f"Jours ≥ 30 °C moy / an  : {y1 - 9}-{y1}",
-                         f"{signed(diff, 1)} j"))
-    else:
-        cards.append(kpi("Jours ≥ 30 °C / an (période ≥ 20 ans requise)", "-"))
+    cards.append(kpi(f"Jours de forte chaleur (≥ 30 °C) par an en moyenne, {y0}-{y1}",
+                     f"{fr(clim.NBJTX30.mean(), 1)} j" if len(clim) else "-"))
 
     ep = clip_years(episodes, periode)
     if len(ep):
@@ -537,7 +527,8 @@ def update_kpis(periode):
 
     c = heatmap.loc[heatmap.nb_arretes.idxmax()]
     risk = c[TYPES].astype(float).idxmax()
-    cards.append(kpi(f"Arrêtés CatNat · {c.libelle_geographique} (1982-2022)", fr(c.nb_arretes)))
+    cards.append(kpi(f"Arrêtés · Bordeaux Métropole, {len(heatmap)} communes (1982-2022)",
+                     fr(heatmap.nb_arretes.sum())))
     cards.append(kpi(f"Commune la plus touchée · {risk.lower()}", c.libelle_geographique))
 
     note = f"Période {y0}-{y1} appliquée au climat et aux épisodes CatNat ; communes : 1982-2022."
