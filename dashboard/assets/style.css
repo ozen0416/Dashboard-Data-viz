@@ -1,5 +1,6 @@
 /* Style moderne (cartes arrondies, ombres douces, police Inter) + accessibilité */
 :root {
+  --c-catnat: #d97706; --c-climat: #0891b2;
   --page: #f3f5f9; --surface: #ffffff; --text: #111827; --muted: #6b7280;
   --border: transparent; --line: #e5e7eb; --accent: #2a5bd7; --accent-text: #ffffff; --focus: #1d4ed8;
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 14px rgba(16, 24, 40, 0.06);
@@ -8,12 +9,14 @@
   color-scheme: light;
 }
 :root[data-theme="sombre"] {
+  --c-catnat: #f59e0b; --c-climat: #22d3ee;
   --page: #0f172a; --surface: #1e293b; --text: #f1f5f9; --muted: #94a3b8;
   --border: #334155; --line: #334155; --accent: #86b6ef; --accent-text: #0f172a; --focus: #fbbf24;
   --shadow: none; --shadow-hover: 0 0 0 1px #86b6ef;
   color-scheme: dark;
 }
 :root[data-theme="contraste"] {
+  --c-catnat: #9a4d00; --c-climat: #0e7490;
   --page: #ffffff; --surface: #ffffff; --text: #000000; --muted: #000000;
   --border: #000000; --line: #000000; --accent: #0d366b; --accent-text: #ffffff; --focus: #c00000;
   --shadow: none; --shadow-hover: 0 0 0 2px #000000;
@@ -66,6 +69,10 @@ a { color: var(--accent); }
   font-size: clamp(1.25rem, 1rem + 0.7vw, 1.7rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15;
 }
 .topbar-right { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 1.25rem; }
+.topbar-left { grid-column: 1; justify-self: start; display: flex; align-items: flex-end; gap: 0.5rem; }
+.gfilter { width: 175px; }
+.filter-label { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); margin: 0 0 0.15rem 0.2rem; }
+.gfilter .dash-dropdown { font-size: 0.8rem; }
 .btn {
   font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 0.4rem 1rem; min-height: 36px;
   color: var(--accent-text); background: var(--accent); border: 1px solid var(--accent); border-radius: 999px;
@@ -107,6 +114,12 @@ main { min-height: 0; }
   border-radius: var(--radius); padding: 0.55rem 0.8rem 0.35rem;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
+/* Même liseré d'accent que les KPI, à gauche du graphique. */
+.tile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--accent); }
+/* Catastrophes : orange ambré · climat : bleu cyan · lien entre les deux : moitié / moitié. */
+.tile-catnat::before { background: var(--c-catnat); }
+.tile-climat::before { background: var(--c-climat); }
+.tile-mixte::before { background: linear-gradient(to bottom, var(--c-climat) 50%, var(--c-catnat) 50%); }
 .tile:hover, .tile:focus-within { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
 .tile-head { display: flex; justify-content: center; text-align: center; }
 .tile h3 { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: -0.005em; }
@@ -117,10 +130,10 @@ main { min-height: 0; }
 /* Tout le graphique est cliquable (le bouton s'étend sur la carte). */
 .tile-open::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--radius); }
 .focus-icon {
-  position: absolute; top: 0.5rem; right: 0.7rem; color: var(--muted); font-size: 1rem;
-  opacity: 0; transition: opacity 0.15s ease;
+  position: absolute; top: 0.35rem; right: 0.6rem; color: var(--muted); font-size: 1.5rem; line-height: 1;
+  transition: color 0.15s ease;
 }
-.tile:hover .focus-icon, .tile:focus-within .focus-icon { opacity: 1; }
+.tile:hover .focus-icon, .tile:focus-within .focus-icon { color: var(--accent); }
 .tile-viz { flex: 1; min-height: 0; pointer-events: none; }
 
 footer { color: var(--muted); font-size: 0.7rem; text-align: center; }
@@ -162,7 +175,8 @@ body:has(dialog[open]) { overflow: hidden; }
 .btn-export::before { content: "↓" / ""; font-weight: 700; }
 .btn-export:hover { filter: brightness(1.1); }
 :root[data-theme="contraste"] .btn-export { background: #000000; border-color: #000000; }
-.question { color: var(--muted); margin: 0 0 0.75rem; }
+.question { color: var(--muted); margin: 0 0 0.5rem; }
+.common-filters { margin: 0 0 0.75rem; font-size: 0.85rem; font-weight: 500; }
 .summary { font-weight: 500; }
 .note { color: var(--muted); font-size: 0.9rem; }
 details summary { cursor: pointer; font-weight: 600; min-height: 32px; }
@@ -191,7 +205,7 @@ details summary { cursor: pointer; font-weight: 600; min-height: 32px; }
   .app { height: auto; }
   .topbar { grid-template-columns: 1fr; justify-items: center; }
   .topbar h1, .topbar-right { grid-column: 1; justify-self: center; }
-  .topbar-side:not(.topbar-right) { display: none; }
+  .topbar-left { grid-column: 1; justify-self: center; }
   .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
   /* On garde la disposition 2 × 2 : la page défile verticalement au lieu de réorganiser les graphiques. */
   .tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 360px; }

@@ -49,6 +49,46 @@ INDICATEURS = {
 
 YEAR_MIN, YEAR_MAX = int(climat.annee.min()), int(climat.annee.max())
 EP_MIN, EP_MAX = int(episodes.annee.min()), int(episodes.annee.max())
+PERIOD_MAX = EP_MAX  # le filtre de période s'arrête en 2022 (CatNat 2023-2024 incomplets)
+
+IND_COURT = {
+    "TX": "Température max.", "NBJTX30": "Jours ≥ 30 °C", "NBJTX35": "Jours ≥ 35 °C",
+    "NBJTNS20": "Nuits tropicales", "RR": "Pluie annuelle", "ETP": "Évapotranspiration",
+    "bilan_hydrique": "Bilan hydrique", "NBJRR30": "Jours de pluie ≥ 30 mm", "NBJRR50": "Jours de pluie ≥ 50 mm",
+}
+TYPES_NOMS = {"Inondations": "inondations", "Sécheresse / argiles": "sécheresses (argiles)",
+              "Tempêtes": "tempêtes", "Mouvements de terrain": "mouvements de terrain",
+              "Autres": "autres catastrophes"}
+CIDS = ["heat", "clim", "evol", "scat"]
+
+
+def types_phrase(types):
+    """« catastrophes naturelles » si tous les types, sinon « inondations et tempêtes »…"""
+    noms = [TYPES_NOMS[t] for t in TYPES if t in (types or [])]
+    if not noms or len(noms) == len(TYPES):
+        return "catastrophes naturelles"
+    return noms[0] if len(noms) == 1 else ", ".join(noms[:-1]) + " et " + noms[-1]
+
+
+def titres(ind, types):
+    """Titres (vignette, fenêtre de détail) de chaque graphique selon les filtres communs."""
+    tp, label = types_phrase(types), INDICATEURS[ind][0]
+    court = IND_COURT[ind][0].lower() + IND_COURT[ind][1:]
+    return {
+        "heat": (f"Communes les plus exposées aux {tp}", f"Exposition des 28 communes de la métropole aux {tp}"),
+        "clim": (f"{label} en Gironde", f"{label} en Gironde"),
+        "evol": (f"Fréquence des {tp} vs {court}", f"Fréquence des {tp} dans la métropole vs {court}"),
+        "scat": (f"Lien climat-catastrophes : {court} × {tp}", f"Lien climat-catastrophes : {court} × {tp}"),
+    }
+
+
+TITRES_INIT = titres("NBJTX30", TYPES)
+
+# Textes des listes déroulantes Dash 4 en français.
+DROPDOWN_FR = {"select_all": "Tout sélectionner", "deselect_all": "Tout désélectionner",
+               "selected_count": "{num_selected} sélectionnés", "search": "Rechercher",
+               "clear_search": "Effacer la recherche", "clear_selection": "Effacer la sélection",
+               "no_options_found": "Aucun résultat"}
 
 # ---------------------------------------------------------------------------
 # Thèmes (palette catégorielle validée : bleu, orange, aqua, jaune + gris "Autres")
@@ -59,21 +99,21 @@ THEMES = {
         accent="#2a78d6", ref="#6f6e69", neutral="#c9c8c2",
         series=dict(zip(TYPES, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#8a8984"])),
         ramp=["#f0f5fc", "#9ec5f4", "#3987e5", "#1c5cab", "#0d366b"],
-        ordinal=["#86b6ef", "#5598e7", "#2a78d6", "#1c5cab", "#0d366b"],
+        ordinal=["#86b6ef", "#5598e7", "#2a78d6", "#1c5cab", "#0d366b"], climat="#0891b2",
     ),
     "sombre": dict(
         surface="#1e293b", text="#f1f5f9", muted="#94a3b8", grid="#334155",
         accent="#3987e5", ref="#a3a29b", neutral="#5c5b57",
         series=dict(zip(TYPES, ["#3987e5", "#d95926", "#199e70", "#c98500", "#8f8e88"])),
         ramp=["#24272c", "#184f95", "#3987e5", "#86b6ef", "#cde2fb"],
-        ordinal=["#256abf", "#3987e5", "#6da7ec", "#9ec5f4", "#cde2fb"],
+        ordinal=["#256abf", "#3987e5", "#6da7ec", "#9ec5f4", "#cde2fb"], climat="#22d3ee",
     ),
     "contraste": dict(
         surface="#ffffff", text="#000000", muted="#000000", grid="#595959",
         accent="#0d366b", ref="#000000", neutral="#8a8a8a",
-        series=dict(zip(TYPES, ["#1c5cab", "#c24a1c", "#0f7a54", "#a36f00", "#5c5b57"])),
+        series=dict(zip(TYPES, ["#2a78d6", "#c24a1c", "#0f7a54", "#a36f00", "#5c5b57"])),
         ramp=["#ffffff", "#9ec5f4", "#2a78d6", "#104281", "#000000"],
-        ordinal=["#5598e7", "#2a78d6", "#1c5cab", "#104281", "#000000"],
+        ordinal=["#5598e7", "#2a78d6", "#1c5cab", "#104281", "#000000"], climat="#0e7490",
     ),
 }
 DEFAULT_PREFS = {"theme": "clair", "scale": 1.0, "patterns": False, "labels": False, "font": False}
@@ -122,7 +162,8 @@ def style_fig(fig, p, height=420, legend=True):
 # Encodage secondaire des types de risque (forme du point, style de trait) : jamais la couleur seule.
 SYMBOLS = {"Inondations": "circle", "Sécheresse / argiles": "square", "Tempêtes": "diamond",
            "Mouvements de terrain": "triangle-up", "Autres": "x"}
-DASHES = {"Inondations": "solid", "Sécheresse / argiles": "dash", "Tempêtes": "dot",
+# Aucun trait continu : une ligne pleine ressortirait davantage que les autres avec les motifs activés.
+DASHES = {"Inondations": "longdashdot", "Sécheresse / argiles": "dash", "Tempêtes": "dot",
           "Mouvements de terrain": "dashdot", "Autres": "longdash"}
 
 
@@ -172,11 +213,6 @@ def labelled(label, cid, component):
     return html.Div([html.Label(label, htmlFor=cid), component], className="control")
 
 
-def types_checklist(cid):
-    return fieldset("Types de risque", dcc.Checklist(
-        id=cid, options=TYPES, value=TYPES, inline=True, className="choices"))
-
-
 def explorer(cid, year_min, year_max):
     """Lecture d'une année au clavier : le curseur met le point en évidence et la valeur est annoncée."""
     return html.Div([
@@ -192,7 +228,9 @@ def detail_body(cid, title, question, controls, note=None, extra=None):
     """Contenu complet d'une fenêtre de détail : filtres, graphe, résumé, données."""
     return [
         html.P(question, className="question"),
-        html.Div(controls, className="controls", role="group", **{"aria-label": f"Filtres : {title}"}),
+        html.P(id=f"{cid}-common", className="common-filters"),
+        html.Div(controls, className="controls", role="group", **{"aria-label": f"Filtres : {title}"})
+        if controls else None,
         extra,
         html.Div(dcc.Graph(id=f"{cid}-graph", config=GRAPH_CONFIG),
                  **{"aria-describedby": f"{cid}-summary"}),
@@ -222,21 +260,22 @@ def dialog(cid, title, children):
     ], id=f"dlg-{cid}", className="dialog", **{"aria-labelledby": f"dlg-{cid}-title"})
 
 
-def tile(cid, title):
+def tile(cid, title, kind):
     """Visuel du rapport : titre-bouton (ouvre le détail), mini-graphique décoratif, résumé pour lecteurs d'écran."""
     return html.Article([
         html.Div([
-            html.H3(html.Button([title, html.Span(" - ouvrir le détail", className="sr-only")],
+            html.H3(html.Button([html.Span(title, id=f"{cid}-title"),
+                                 html.Span(" - ouvrir le détail", className="sr-only")],
                                 type="button", className="tile-open",
                                 **{"data-dialog-open": f"dlg-{cid}", "aria-haspopup": "dialog",
                                    "aria-controls": f"dlg-{cid}"})),
-            html.Span("⤢", className="focus-icon", title="Mode focus", **{"aria-hidden": "true"}),
+            html.Span("⤢", className="focus-icon", title="Agrandir", **{"aria-hidden": "true"}),
         ], className="tile-head"),
         html.P(id=f"{cid}-sub", className="tile-sub"),
         html.P(id=f"{cid}-short", className="sr-only"),
         html.Div(dcc.Graph(id=f"{cid}-mini", config=MINI_CONFIG, responsive=True, style={"height": "100%"}),
                  className="tile-viz", **{"aria-hidden": "true"}),
-    ], className="tile")
+    ], className=f"tile tile-{kind}")
 
 
 GRAPH_CONFIG = {
@@ -280,42 +319,34 @@ a11y_dialog = dialog("a11y", "Options d'accessibilité", html.Div([
            "Chaque graphique propose ses données sous forme de tableau.", className="note"),
 ], className="controls a11y-controls"))
 
-CLIMAT_OPTIONS = [{"label": f"{v[0]} ({v[1]})", "value": k} for k, v in INDICATEURS.items()]
 
 dialogs = [
-    dialog("evol", "Fréquence des catastrophes naturelles dans la métropole", detail_body(
+    dialog("evol", TITRES_INIT["evol"][1], detail_body(
         "evol", "Évolution des catastrophes",
         "Quels risques reviennent, et se multiplient-ils ? (épisodes CatNat, 28 communes, 1982-2022)",
-        [types_checklist("evol-types"),
-         fieldset("Regroupement", dcc.RadioItems(
+        [fieldset("Regroupement", dcc.RadioItems(
              id="evol-grain", value="decennie", inline=True, className="choices",
              options=[{"label": "Par décennie (moyenne par an)", "value": "decennie"},
-                      {"label": "Par année", "value": "annee"}])),
-         labelled("Indicateur climatique à comparer (graphique dessous)", "evol-climat", dcc.Dropdown(
-             id="evol-climat", value="none", clearable=False,
-             options=[{"label": "Aucun", "value": "none"}] + CLIMAT_OPTIONS))])),
-    dialog("heat", "Exposition des 28 communes de la métropole par type de risque", detail_body(
+                      {"label": "Par année", "value": "annee"}]))])),
+    dialog("heat", TITRES_INIT["heat"][1], detail_body(
         "heat", "Communes par type de risque",
         "Quelle commune est touchée par quel risque ? (nombre d'arrêtés CatNat 1982-2022)",
-        [types_checklist("heat-types"),
-         fieldset("Valeur affichée", dcc.RadioItems(
+        [fieldset("Valeur affichée", dcc.RadioItems(
              id="heat-mode", value="count", inline=True, className="choices",
              options=[{"label": "Nombre d'arrêtés", "value": "count"},
                       {"label": "Part dans la commune (%)", "value": "share"}])),
          labelled("Trier les communes par", "heat-sort", dcc.Dropdown(
-             id="heat-sort", value="total", clearable=False,
+             labels=DROPDOWN_FR, id="heat-sort", value="total", clearable=False,
              options=[{"label": "Total des types sélectionnés", "value": "total"},
                       {"label": "Ordre alphabétique", "value": "alpha"}]
              + [{"label": t, "value": t} for t in TYPES])),
          labelled("Limiter à certaines communes (vide = toutes)", "heat-communes", dcc.Dropdown(
-             id="heat-communes", multi=True, placeholder="Toutes les communes",
+             labels=DROPDOWN_FR, id="heat-communes", multi=True, placeholder="Toutes les communes",
              options=sorted(heatmap.libelle_geographique)))])),
-    dialog("clim", "Évolution du climat en Gironde", detail_body(
+    dialog("clim", TITRES_INIT["clim"][1], detail_body(
         "clim", "Indicateur climatique",
         "Le climat se réchauffe-t-il ? Les sécheresses et les pluies extrêmes évoluent-elles ?",
-        [labelled("Indicateur (température, pluviométrie...)", "clim-ind", dcc.Dropdown(
-            id="clim-ind", value="NBJTX30", clearable=False, options=CLIMAT_OPTIONS)),
-         fieldset("Affichage", dcc.Checklist(
+        [fieldset("Affichage", dcc.Checklist(
              id="clim-opts", value=["mm10"], inline=True, className="choices",
              options=[{"label": "Moyenne mobile 10 ans", "value": "mm10"},
                       {"label": "Tendance linéaire", "value": "trend"}])),
@@ -323,14 +354,12 @@ dialogs = [
              id="clim-grain", value="annee", inline=True, className="choices",
              options=[{"label": "Par année", "value": "annee"},
                       {"label": "Moyenne par décennie", "value": "decennie"}]))],
-        extra=explorer("clim", YEAR_MIN, YEAR_MAX))),
-    dialog("scat", "Lien entre climat et catastrophes naturelles", detail_body(
+        extra=explorer("clim", YEAR_MIN, PERIOD_MAX))),
+    dialog("scat", TITRES_INIT["scat"][1], detail_body(
         "scat", "Climat et catastrophes",
-        "Relation exploratoire entre un indicateur climatique et les épisodes CatNat d'un type (une année = un point).",
-        [labelled("Indicateur climatique (axe horizontal)", "scat-x", dcc.Dropdown(
-            id="scat-x", value="NBJTX30", clearable=False, options=CLIMAT_OPTIONS)),
-         labelled("Type de catastrophe (axe vertical)", "scat-y", dcc.Dropdown(
-             id="scat-y", value="Sécheresse / argiles", clearable=False, options=TYPES))],
+        "Relation exploratoire entre l'indicateur climatique et les épisodes CatNat des types choisis "
+        "(une année = un point).",
+        [],
         note="Corrélation exploratoire sur environ 40 années : elle ne prouve pas un lien de cause à effet.",
         extra=explorer("scat", EP_MIN, EP_MAX))),
 ]
@@ -339,12 +368,24 @@ app.layout = html.Div([
     html.A("Aller aux graphiques", href="#graphiques", className="skip-link"),
     dcc.Store(id="prefs"),
     html.Header([
-        html.Div(className="topbar-side", **{"aria-hidden": "true"}),
+        html.Div([
+            html.Div([
+                html.Label("Indicateur climatique", htmlFor="g-ind", className="filter-label"),
+                dcc.Dropdown(labels=DROPDOWN_FR, id="g-ind", value="NBJTX30", clearable=False, searchable=False,
+                             options=[{"label": IND_COURT[k], "value": k} for k in INDICATEURS]),
+            ], className="gfilter"),
+            html.Div([
+                html.Label("Types de catastrophes", htmlFor="g-types", className="filter-label"),
+                dcc.Dropdown(labels=DROPDOWN_FR, id="g-types", value=TYPES, multi=True, searchable=False,
+                             placeholder="Aucun type", options=TYPES),
+            ], className="gfilter"),
+        ], className="topbar-side topbar-left", role="group",
+           **{"aria-label": "Filtres communs aux graphiques"}),
         html.H1("Risques naturels et climat à Bordeaux Métropole"),
         html.Div([html.Div([
             html.Span("Période", id="periode-label", className="slicer-label"),
             html.Div(dcc.RangeSlider(
-                id="periode", min=YEAR_MIN, max=YEAR_MAX, step=1, value=[YEAR_MIN, YEAR_MAX], marks={},
+                id="periode", min=YEAR_MIN, max=PERIOD_MAX, step=1, value=[YEAR_MIN, PERIOD_MAX], marks={},
                 tooltip={"placement": "bottom"}, allowCross=False, className="slicer-range",
             ), className="slicer"),
         ], className="periode", role="group", **{"aria-labelledby": "periode-label"}),
@@ -359,10 +400,10 @@ app.layout = html.Div([
     html.Main([
         html.H2("Graphiques - sélectionner un visuel pour afficher le détail", className="sr-only"),
         html.Div([
-            tile("heat", "Communes les plus exposées par type de risque"),
-            tile("clim", "Évolution du climat en Gironde"),
-            tile("evol", "Fréquence des catastrophes naturelles"),
-            tile("scat", "Lien entre climat et catastrophes naturelles"),
+            tile("heat", TITRES_INIT["heat"][0], "catnat"),
+            tile("clim", TITRES_INIT["clim"][0], "climat"),
+            tile("evol", TITRES_INIT["evol"][0], "catnat"),
+            tile("scat", TITRES_INIT["scat"][0], "mixte"),
         ], className="tile-grid"),
     ], id="graphiques", tabIndex=-1),
     html.Footer([
@@ -402,6 +443,17 @@ clientside_callback(
     Output("prefs", "data"),
     Input("a11y-theme", "value"), Input("a11y-size", "value"), Input("a11y-options", "value"),
 )
+
+
+@callback([Output(f"{c}-title", "children") for c in CIDS]
+          + [Output(f"dlg-{c}-title", "children") for c in CIDS]
+          + [Output(f"{c}-common", "children") for c in CIDS],
+          Input("g-ind", "value"), Input("g-types", "value"))
+def update_titles(ind, types):
+    t = titres(ind, types)
+    common = (f"Filtres communs (en haut à gauche de la page) : indicateur « {IND_COURT[ind]} » · "
+              f"types : {types_phrase(types) if types else 'aucun'}.")
+    return [t[c][0] for c in CIDS] + [t[c][1] for c in CIDS] + [common] * len(CIDS)
 
 
 def clip_years(df, periode):
@@ -546,7 +598,7 @@ def by_decade(df, cols, how="sum"):
 
 
 @detail_callback("evol",
-          Input("evol-types", "value"), Input("evol-grain", "value"), Input("evol-climat", "value"),
+          Input("g-types", "value"), Input("evol-grain", "value"), Input("g-ind", "value"),
           Input("periode", "value"), Input("prefs", "data"))
 def update_evol(types, grain, clim_ind, periode, prefs):
     p = get_prefs(prefs)
@@ -580,7 +632,7 @@ def update_evol(types, grain, clim_ind, periode, prefs):
         cl = clip_years(climat, [max(periode[0], EP_MIN), min(periode[1], EP_MAX)])
         cl = by_decade(cl, [clim_ind], "mean") if grain == "decennie" else cl.assign(x=cl.annee)
         fig.add_scatter(x=cl.x, y=cl[clim_ind], name=label, mode="lines+markers", row=2, col=1,
-                        line=dict(color=p["t"]["text"], width=2), marker=dict(size=8),
+                        line=dict(color=p["t"]["climat"], width=2), marker=dict(size=8),
                         hovertemplate=f"<b>{label}</b><br>%{{x}} : %{{y:.1f}} {unit}<extra></extra>")
         fig.update_yaxes(title_text=unit, row=2, col=1)
         if clim_ind == "bilan_hydrique":
@@ -601,13 +653,27 @@ def update_evol(types, grain, clim_ind, periode, prefs):
     g = ep.groupby(ep.annee // 10 * 10)
     dec = g[types].mean()
     labels = [f"{a}-{str(b)[2:]}" for a, b in zip(g.annee.min(), g.annee.max())]
-    mini = go.Figure()
+    # + l'indicateur climatique commun en dessous (moyenne par décennie), sur un axe séparé.
+    label, unit = INDICATEURS[clim_ind]
+    cl = clip_years(climat, [int(ep.annee.min()), int(ep.annee.max())])
+    cl_dec = cl.groupby(cl.annee // 10 * 10)[clim_ind].mean()
+    dec_fmt = 1 if unit == "°C" or cl_dec.abs().max() < 10 else 0
+    mini = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.68, 0.32], vertical_spacing=0.1)
     for t in types:
-        mini.add_scatter(x=labels, y=dec[t], name=t, mode="lines+markers", **line_style(t, p, width=3, size=9))
+        mini.add_scatter(x=labels, y=dec[t], name=t, mode="lines+markers", row=1, col=1,
+                         **line_style(t, p, width=3, size=9))
+    mini.add_scatter(x=labels, y=cl_dec.values, name=IND_COURT[clim_ind], mode="lines+markers+text",
+                     text=[fr(v, dec_fmt) for v in cl_dec], textposition="top center", cliponaxis=False,
+                     showlegend=False, line=dict(color=p["t"]["climat"], width=3),
+                     marker=dict(size=8, color=p["t"]["climat"]), row=2, col=1)
+    lo, hi = cl_dec.min(), cl_dec.max()
+    pad = (hi - lo) * 0.4 or abs(hi) * 0.2 or 1
     mini.update_xaxes(type="category")
-    mini.update_yaxes(rangemode="tozero")
     tile_layout(mini, p, legend=True)
-    sub = "Épisodes par an (moyenne de chaque décennie), par type de risque"
+    mini.update_yaxes(rangemode="tozero", title_text="épisodes / an", title_font_size=10 * p["scale"], row=1, col=1)
+    mini.update_yaxes(range=[lo - pad, hi + pad * 1.6], title_text=unit, title_font_size=10 * p["scale"],
+                      nticks=3, row=2, col=1)
+    sub = f"Épisodes par an (moyenne par décennie) · en dessous : {IND_COURT[clim_ind][0].lower() + IND_COURT[clim_ind][1:]} ({unit})"
     return fig, summary, (table, "Épisodes CatNat par période et par type"), mini, sub
 
 
@@ -633,7 +699,7 @@ def commune_bars(df, types, p, share=False):
 
 
 @detail_callback("heat",
-          Input("heat-types", "value"), Input("heat-mode", "value"), Input("heat-sort", "value"),
+          Input("g-types", "value"), Input("heat-mode", "value"), Input("heat-sort", "value"),
           Input("heat-communes", "value"), Input("prefs", "data"))
 def update_heat(types, mode, sort, selection, prefs):
     p = get_prefs(prefs)
@@ -686,7 +752,7 @@ def sync_clim_focus(periode, year):
 
 
 @detail_callback("clim",
-          Input("clim-ind", "value"), Input("clim-opts", "value"), Input("clim-grain", "value"),
+          Input("g-ind", "value"), Input("clim-opts", "value"), Input("clim-grain", "value"),
           Input("periode", "value"), Input("clim-focus", "value"), Input("prefs", "data"),
           extra_outputs=(Output("clim-focus-text", "children"),))
 def update_clim(ind, opts, grain, periode, focus, prefs):
@@ -807,15 +873,21 @@ def sync_scat_focus(periode, year):
 
 
 @detail_callback("scat",
-          Input("scat-x", "value"), Input("scat-y", "value"), Input("periode", "value"),
+          Input("g-ind", "value"), Input("g-types", "value"), Input("periode", "value"),
           Input("scat-focus", "value"), Input("prefs", "data"),
           extra_outputs=(Output("scat-focus-text", "children"),))
-def update_scat(x, y, periode, focus, prefs):
+def update_scat(x, types, periode, focus, prefs):
     p = get_prefs(prefs)
     t = p["t"]
+    types = [k for k in TYPES if k in (types or [])]
+    if not types:
+        return empty_fig(p, "Sélectionner au moins un type de catastrophe (filtre en haut à gauche)."), "", ""
     df = clip_years(lien, periode)
     if len(df) < 3:
         return empty_fig(p, "Période trop courte (données communes 1982-2022)."), "", ""
+    # Axe vertical : somme des épisodes des types choisis.
+    df = df.assign(sel=df[types].sum(axis=1))
+    y, ylab = "sel", types_phrase(types)
     label, unit = INDICATEURS[x]
     # Une série par décennie : couleur (du clair au foncé) ET forme de point, jamais la couleur seule.
     fig = go.Figure()
@@ -828,7 +900,7 @@ def update_scat(x, y, periode, focus, prefs):
             text=dd.annee, textposition="top center", textfont_size=10 * p["scale"],
             marker=dict(size=12, color=t["ordinal"][i % 5], symbol=DECADE_SYMBOLS[i % 5],
                         line=dict(color=t["text"] if p["theme"] == "contraste" else t["surface"], width=1.5)),
-            hovertemplate=f"<b>%{{text}}</b><br>{label} : %{{x:.1f}} {unit}<br>{y} : %{{y}} épisode(s)<extra></extra>")
+            hovertemplate=f"<b>%{{text}}</b><br>{label} : %{{x:.1f}} {unit}<br>{ylab} : %{{y}} épisode(s)<extra></extra>")
     r = df[x].corr(df[y])
     if df[x].nunique() > 1:
         a, b = np.polyfit(df[x], df[y], 1)
@@ -836,7 +908,7 @@ def update_scat(x, y, periode, focus, prefs):
         fig.add_scatter(x=xs, y=a * xs + b, mode="lines", line=dict(color=t["ref"], dash="dot", width=2),
                         hoverinfo="skip", name="Tendance")
     fig.update_xaxes(title_text=f"{label} ({unit})")
-    fig.update_yaxes(title_text=f"Épisodes par an : {y}")
+    fig.update_yaxes(title_text=f"Épisodes par an : {ylab}")
     style_fig(fig, p, height=440)
 
     # Année explorée au clavier.
@@ -848,7 +920,7 @@ def update_scat(x, y, periode, focus, prefs):
                         text=[f"<b>{int(focus)}</b>"], textposition="middle right",
                         textfont=dict(size=13 * p["scale"], color=t["text"]),
                         marker=dict(size=22, symbol="circle-open", color=t["text"], line=dict(width=3)))
-        focus_text = f"{int(focus)} : {fr(row[x], 1)} {unit} ; {fr(row[y])} épisode(s) « {y} »."
+        focus_text = f"{int(focus)} : {fr(row[x], 1)} {unit} ; {fr(row[y])} épisode(s) « {ylab} »."
         if df[x].nunique() > 1:
             prevu = a * row[x] + b
             pos = "au-dessus de" if row[y] > prevu + 0.05 else "en dessous de" if row[y] < prevu - 0.05 else "sur"
@@ -856,10 +928,10 @@ def update_scat(x, y, periode, focus, prefs):
 
     force = "forte" if abs(r) >= 0.5 else "modérée" if abs(r) >= 0.3 else "faible"
     summary = (f"{len(df)} années. Corrélation {force} {'positive' if r >= 0 else 'négative'} "
-               f"(r = {fr(r, 2)}) entre {label[0].lower() + label[1:]} et les épisodes « {y} ». "
+               f"(r = {fr(r, 2)}) entre {label[0].lower() + label[1:]} et les épisodes « {ylab} ». "
                "Relation exploratoire, pas une preuve de cause.")
     table = df[["annee", x, y]].round(1)
-    table.columns = ["Année", f"{label} ({unit})", f"Épisodes {y}"]
+    table.columns = ["Année", f"{label} ({unit})", f"Épisodes {ylab}"]
 
     # Vignette : nuage de points, droite de tendance et force du lien écrite en clair.
     mini = go.Figure(go.Scatter(
@@ -875,7 +947,7 @@ def update_scat(x, y, periode, focus, prefs):
     mini.update_layout(margin=dict(l=4, r=12, t=6, b=4))
     mini.update_xaxes(title_text=f"{label} ({unit})", title_font_size=11 * p["scale"], showgrid=True, griddash="dot")
     mini.update_yaxes(title_text="Épisodes / an", title_font_size=11 * p["scale"], rangemode="tozero")
-    sub = f"Une année = un point · épisodes « {y} » selon {label[0].lower() + label[1:]}"
+    sub = f"Une année = un point · épisodes « {ylab} » selon {label[0].lower() + label[1:]}"
     return fig, summary, (table, "Climat et catastrophes par année"), mini, sub, focus_text
 
 
