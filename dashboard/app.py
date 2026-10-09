@@ -238,7 +238,7 @@ MINI_CONFIG = {"staticPlot": True, "displayModeBar": False}
 # Application et mise en page
 # ---------------------------------------------------------------------------
 app = Dash(__name__, title="Risques naturels - Bordeaux Métropole", external_stylesheets=[
-    "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700"
+    "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@300;500"
     "&family=Inter:wght@400;500;600;700&display=swap"])
 
 app.index_string = app.index_string.replace("<html>", '<html lang="fr">')
@@ -502,7 +502,7 @@ def update_kpis(periode):
         last = clim[clim.annee > y1 - 10].NBJTX30.mean()
         diff = last - first
         cards.append(kpi(f"Jours ≥ 30 °C / an : {y1 - 9}-{y1} vs {y0}-{y0 + 9}",
-                         f"{signed(diff, 1)} j ({signed(diff / first * 100)} %)"))
+                         f"{signed(diff, 1)} j"))
     else:
         cards.append(kpi("Jours ≥ 30 °C / an (période ≥ 20 ans requise)", "-"))
 
