@@ -11,7 +11,7 @@ Agent immo / personne / entreprise dans la réigion de gironde / bordeau, object
 
 -CATNAT : https://www.data.gouv.fr/datasets/arretes-de-catastrophe-naturelle-par-commune
 
--DVF : https://www.data.gouv.fr/datasets/demandes-de-valeurs-foncieres-geolocalisees
+
 
 
 Le public et la question
@@ -20,35 +20,6 @@ Problématique
 « Quel est le risque de catastrophe naturelle en Gironde, comment évolue-t-il, et dans quelle mesure le climat (chaleur, sécheresse, pluies extrêmes) l’aggrave-t-il ? Quels risques et quelles communes faut-il traiter en priorité ? (presentation des communes qui ont le plsu subis et presenter les commune les plus exposées aux risques) » »
 
 Le public visé est un décideur public (la métropole, la préfecture) qui doit prioriser ses investissements de prévention.
-
-Les graphiques, dans l’ordre de l’histoire
-#	Graphique	Réponse apportée
-1	Courbe des jours ≥ 30 °C par an (1954-2024), avec moyenne mobile sur 10 ans	Le climat se réchauffe
-2	Pluie annuelle vs évapotranspiration, et jours de forte pluie	Sécheresses et pluies extrêmes évoluent-elles ?
-3	Barres empilées : épisodes CatNat de la métropole par année et par type (1982-2023)	Quels risques reviennent, et se multiplient-ils ?
-4	Barres : nombre moyen d’arrêtés par commune, Bordeaux Métropole vs Gironde vs autres métropoles vs France	Bordeaux est-elle plus exposée qu’ailleurs ?
-5	Heatmap commune × type de catastrophe (28 communes)	Quelles communes sont touchées par quoi
-6	Tableau final : pour chaque commune, risque dominant et mesure suggérée	Où agir en premier
-
-Le graphique 5 est le cœur du dashboard : c’est lui qui répond à « où agir en priorité ». Une carte des 28 communes serait un bonus (il faut les contours communaux). Si tu veux relier le climat aux catastrophes, ajoute un nuage de points « jours de forte chaleur ou sécheresse vs nombre d’arrêtés sécheresse par année », en le présentant comme une corrélation exploratoire, pas une preuve de cause.
-
-KPI à afficher en haut du dashboard :
-
-Jours ≥ 30 °C : moyenne de la dernière décennie vs la première (en jours et en %).
-Épisodes CatNat dans la métropole depuis 1982, et par décennie.
-Risque dominant : le type le plus fréquent (en part).
-Arrêtés par commune : Bordeaux Métropole vs France (rapport).
-Commune la plus touchée, avec son risque principal.
-
-Un dernier élément, sans table supplémentaire : un tableau de priorités. Pour chaque commune de heatmap_communes, tu prends la colonne qui a la valeur maximale pour trouver son risque dominant, puis tu y associes la mesure suggérée (points d’ombre, surveillance du bâti, etc.). C’est l’écran qui répond à « où agir en priorité ».
-
-Ce que tu dois faire maintenant
-Charger CatNat, filtrer la métropole, vérifier qu’il y a bien 28 communes.
-Regrouper les types de catastrophe (sécheresse/argiles, inondations, tempêtes, mouvements de terrain, autres).
-Préparer la météo annuelle (jours chauds, pluie, ETP) à partir de ta table mensuelle.
-
-
-Détail et interprétation des bases d'analyse dans le dossier notebook
 
 ## Prétraitements communs à CatNat
 
@@ -299,3 +270,4 @@ Petite note sous le graphique.
 
 **Visuel :**  
 Nuage de points exploratoire (environ 40 points, pas de preuve de cause).
+
