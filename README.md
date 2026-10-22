@@ -226,31 +226,3 @@ DATAVIZ Dashboard/
 ├── requirements.txt                   Paquets Python à installer
 └── README.md
 ```
-
----
-
-## 7. Annexes
-
-### Trame de la présentation
-
-- [ ] **La problématique** et les trois questions qui en découlent (sections 1 et 2).
-- [ ] **Les données** : quelles bases, quels prétraitements et pourquoi (section 3).
-- [ ] **Les méthodes et la technologie** : pourquoi Python, Dash et Plotly.
-- [ ] **Les choix d'affichage** : une page, KPI en haut, catastrophes à gauche, climat à droite, analyses par décennie (section 4).
-- [ ] **Le lien météo × catastrophes** : corrélation exploratoire (nuage de points + coefficient r), pas une preuve de cause.
-- [ ] **L'accessibilité** : options, clavier, lecteur d'écran.
-
-### Idées de visuels non retenues
-
-Pistes envisagées au départ ; certaines restent faisables avec les tables existantes.
-
-| Visuel | Question | Table | Statut |
-|---|---|---|---|
-| Arrêtés par département (top 15) | ① | `benchmark` | Retiré du dashboard |
-| Arrêtés par département et par type | ① | `arretes_par_commune` | Retiré du dashboard |
-| Arrêtés par commune de Gironde (top 20) | ① | `arretes_par_commune` (`departement == "33"`) | Non réalisé |
-| Bordeaux Métropole vs Gironde, France, autres métropoles | ① | `benchmark` | Retiré du dashboard (repris dans la présentation) |
-| Heatmap des 28 communes × types | ① | `heatmap_communes` | Remplacée par des barres empilées (plus lisibles) |
-| Risque dominant en barre à 100 % | ① | `episodes_par_annee` | Remplacé par un KPI |
-| Sécheresse : bilan hydrique, pluie, ETP avec ligne à zéro | ③ | `climat_annuel` | Intégré au sélecteur d'indicateur |
-| Pluies extrêmes (jours ≥ 30 / 50 mm) | ③ | `climat_annuel` | Intégré au sélecteur d'indicateur |
