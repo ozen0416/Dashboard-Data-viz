@@ -1,0 +1,13 @@
+# Dashboard « Risques naturels et climat » · Bordeaux Métropole
+# Versions testées avec Python 3.13 (.venv du projet).
+# Installation : python -m pip install -r requirements.txt
+
+# --- Dashboard (dashboard/app.py) ---
+dash==4.4.1          # application web
+plotly==7.1.0        # graphiques
+pandas==3.0.6        # lecture et calcul des données
+numpy==2.5.3         # tendances et corrélations
+openpyxl==3.1.5      # export Excel des données
+
+# --- Préparation des données (notebook/cration_base.ipynb) ---
+ipykernel==7.4.0     # exécuter les notebooks (VS Code, PyCharm, Jupyter)

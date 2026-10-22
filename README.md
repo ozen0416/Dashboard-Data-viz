@@ -1,273 +1,256 @@
-Projet Dashboard
+# Dashboard « Risques naturels et climat » · Bordeaux Métropole
 
+Tableau de bord interactif et accessible (Python · Dash · Plotly) qui croise les **arrêtés de catastrophe naturelle (CatNat)** et les **données climatiques de Météo-France** pour répondre à une question simple : quel est le risque, comment évolue-t-il, et quelle est la part du climat ?
 
+---
 
-Agent immo / personne / entreprise dans la réigion de gironde / bordeau, objectif = trouver le meilleur endroit pour s'installer en prenant en compte les risques possible et les différentes contraintes (chaleur, pluvio, terrain équipement) 
+## Sommaire
 
+1. [La problématique](#1-la-problématique)
+2. [Trois questions, trois réponses](#2-trois-questions-trois-réponses)
+3. [Les données](#3-les-données)
+4. [Le dashboard](#4-le-dashboard)
+5. [Installer et lancer](#5-installer-et-lancer)
+6. [Organisation du projet](#6-organisation-du-projet)
+7. [Annexes](#7-annexes)
 
+---
 
-- Incendies lien données période 20-25 ici = "https://bdiff.agriculture.gouv.fr/incendies?if%5BidIncendie%5D=&if%5BdateAlerteDeb%5D%5Bdate%5D=01%2F01%2F2015&if%5BdateAlerteDeb%5D%5Btime%5D%5Bhour%5D=0&if%5BdateAlerteDeb%5D%5Btime%5D%5Bminute%5D=0&if%5BdateAlerteFin%5D%5Bdate%5D=31%2F12%2F2025&if%5BdateAlerteFin%5D%5Btime%5D%5Bhour%5D=23&if%5BdateAlerteFin%5D%5Btime%5D%5Bminute%5D=59&if%5BperiodeDeb%5D%5Bjour%5D=&if%5BperiodeDeb%5D%5Bmois%5D=&if%5BperiodeFin%5D%5Bjour%5D=&if%5BperiodeFin%5D%5Bmois%5D=&if%5BperiodeAnnees%5D%5BanneeDeb%5D=&if%5BperiodeAnnees%5D%5BanneeFin%5D=&if%5BheureDeb%5D=&if%5BheureFin%5D=&if%5BsurfaceDeInc%5D=1&if%5BsurfaceDe%5D=&if%5BsurfaceA%5D=&if%5BsurfaceAInc%5D=1&if%5Bfr%5D=1&if%5Bzone%5D=&if%5Bra%5D=&if%5Bdeprts%5D%5Bvalue%5D=&if%5Bcommune%5D=&if%5Bbbox%5D%5Bvalue%5D=&if%5Bsubmit%5D=#tab"
-- Météo lien données période 1950-2024 = "https://defis.data.gouv.fr/datasets/6569b3d7d193b4daf2b43edc"
+## 1. La problématique
 
--CATNAT : https://www.data.gouv.fr/datasets/arretes-de-catastrophe-naturelle-par-commune
+> **« Quel est le risque de catastrophe naturelle en métropole de Bordeaux, comment évolue-t-il, et dans quelle mesure le climat (chaleur, sécheresse, pluies extrêmes) l'aggrave-t-il ? »**
 
+| | |
+|---|---|
+| **Public visé** | Un décideur public : Bordeaux Métropole (direction des risques), élus, préfecture |
+| **Son besoin** | Comprendre le risque pour prioriser les investissements de prévention |
+| **Périmètre** | Les 28 communes de Bordeaux Métropole, comparées à la Gironde, à la France et aux autres métropoles |
 
+*Idée de départ : aider un particulier ou une entreprise à choisir où s'installer en Gironde selon les risques et les contraintes (chaleur, pluie, terrain). Le sujet a ensuite été recentré sur le décideur public.*
 
+---
 
-Le public et la question
-Problématique
+## 2. Trois questions, trois réponses
 
-« Quel est le risque de catastrophe naturelle en Gironde, comment évolue-t-il, et dans quelle mesure le climat (chaleur, sécheresse, pluies extrêmes) l’aggrave-t-il ? Quels risques et quelles communes faut-il traiter en priorité ? (presentation des communes qui ont le plsu subis et presenter les commune les plus exposées aux risques) » »
+La problématique se découpe en trois questions. Tout le projet (données, tables, dashboard) est organisé pour y répondre.
 
-Le public visé est un décideur public (la métropole, la préfecture) qui doit prioriser ses investissements de prévention.
+| Question | Données | Tables | Dans le dashboard |
+|---|---|---|---|
+| **① Quel est le risque ?** | Arrêtés CatNat | `heatmap_communes`, `episodes_par_annee`, `benchmark` | KPI arrêtés, risque dominant, commune la plus touchée · graphique **Communes les plus exposées** |
+| **② Comment évolue-t-il ?** | Arrêtés CatNat | `episodes_par_annee` | KPI nombre de catastrophes · graphique **Fréquence des catastrophes** |
+| **③ Le climat l'aggrave-t-il ?** | Météo-France + CatNat | `climat_annuel`, `lien_climat_catastrophes` | KPI jours ≥ 30 °C · graphiques **Évolution du climat** et **Lien climat × catastrophes** |
 
-## Prétraitements communs à CatNat
+### ① Quel est le risque ?
 
-Ils valent pour episodes_par_annee, benchmark, arretes_par_commune, heatmap_communes et lien_climat_catastrophes.
+On mesure le risque par le **nombre d'arrêtés CatNat** (reconnaissance officielle d'une catastrophe naturelle dans une commune). On regarde **où** il se concentre (par commune), **lequel** domine (par type) et **à quel niveau** par rapport aux autres territoires.
 
-Code INSEE converti en texte sur 5 caractères.
-Année de l’événement = année de date_debut.
-Période limitée à 1982-2022 (2023-2024 incomplets).
-8 types regroupés en 5 : Sécheresse / argiles, Inondations, Tempêtes, Mouvements de terrain, Autres.
+### ② Comment évolue-t-il ?
 
-## Résumé par table
+On suit le nombre d'**épisodes par an et par type** depuis 1982, regroupés **par décennie** pour lisser les variations d'une année à l'autre.
 
-### `climat_annuel`
+### ③ Le climat l'aggrave-t-il ?
 
-**Niveau et période :**  
-Gironde, 1954-2024, une ligne par année.
+On suit d'abord l'**évolution du climat** (chaleur, pluie, sécheresse) depuis 1950, puis on **croise** climat et catastrophes année par année. Ce croisement est une **corrélation exploratoire**, pas une preuve de cause.
 
-**Prétraitements propres :**  
-Années complètes uniquement (12 mois) ; stations gardées si elles ont au moins 40 années complètes (19 stations) ; somme annuelle pour les jours et la pluie, moyenne pour la température ; moyenne des stations ; bilan hydrique (pluie − évapotranspiration) ; moyenne mobile sur 10 ans ; nombre de stations par année.
+---
 
-**Ce qu’elle permet de voir :**  
-Le réchauffement (jours ≥ 30 °C), la sécheresse (bilan hydrique), les pluies extrêmes.
+## 3. Les données
 
+### Sources
 
-### `episodes_par_annee`
+| Source | Contenu | Période | Sert à | Lien |
+|---|---|---|---|---|
+| **Arrêtés CatNat** (data.gouv.fr) | Arrêtés de catastrophe naturelle par commune, France entière | 1982 → 2024 (utilisé : 1982-2022) | Questions ① ② ③ | [data.gouv.fr](https://www.data.gouv.fr/datasets/arretes-de-catastrophe-naturelle-par-commune) |
+| **Météo-France** (data.gouv.fr) | Données climatologiques mensuelles des stations de Gironde | 1950 → 2024 | Question ③ | [defis.data.gouv.fr](https://defis.data.gouv.fr/datasets/6569b3d7d193b4daf2b43edc) |
 
-**Niveau et période :**  
-Bordeaux Métropole (28 communes), 1982-2022, une ligne par année.
+*Source explorée mais non retenue : feux de forêt 2015-2025 de la [BDIFF](https://bdiff.agriculture.gouv.fr/incendies).*
 
-**Prétraitements propres :**  
-Filtre sur la métropole ; un épisode touchant plusieurs communes compté une seule fois ; comptage par année et par type ; années sans épisode mises à 0.
+### Prétraitements
 
-**Ce qu’elle permet de voir :**  
-L’évolution des catastrophes dans le temps, par type de risque.
+**Arrêtés CatNat** (communs à toutes les tables CatNat) :
+- Code INSEE converti en texte sur 5 caractères (garde le 0 initial, ex. `06088`).
+- Année de l'événement = année de `date_debut`.
+- Période limitée à **1982-2022** : 2023 et 2024 sont incomplets.
+- **8 types regroupés en 5** : Sécheresse / argiles, Inondations, Tempêtes, Mouvements de terrain, Autres.
 
+**Climat (Météo-France)** :
+- Seules les **années complètes** (12 mois) sont gardées.
+- Seules les stations ayant **au moins 40 années complètes** sont retenues, soit **19 stations**.
+- Agrégation annuelle : **somme** pour les jours et la pluie, **moyenne** pour la température, puis **moyenne des stations**.
+- Variables calculées : **bilan hydrique** (pluie − évapotranspiration), **moyennes mobiles sur 10 ans**, **nombre de stations** par année.
 
-### `benchmark`
+### Tables préparées
 
-**Niveau et période :**  
-France, départements et métropoles, une ligne par territoire.
+Produites par `notebook/cration_base.ipynb`, rangées ici par question.
 
-**Prétraitements propres :**  
-Total d’arrêtés par territoire ; nombre de communes (référentiel toutes années) ; moyenne d’arrêtés par commune.
+| Question | Table | Niveau · période | Ce qu'elle montre |
+|---|---|---|---|
+| ① | `arretes_par_commune` | France entière (≈ 35 000 communes) · 1 ligne / commune | Classement national des communes (base des tables ci-dessous) |
+| ① | `heatmap_communes` | Les 28 communes de la métropole | Quelle commune est touchée par quel risque |
+| ① | `benchmark` | France, départements, métropoles · 1 ligne / territoire | Position de Bordeaux face aux autres territoires |
+| ① ② | `episodes_par_annee` | Métropole · 1982-2022 · 1 ligne / année | Épisodes par année et par type |
+| ③ | `climat_annuel` | Gironde · 1950-2024 · 1 ligne / année | Réchauffement, sécheresse, pluies extrêmes |
+| ③ | `lien_climat_catastrophes` | Climat + épisodes · 1982-2022 · 1 ligne / année | Relation climat ↔ catastrophes |
 
-**Ce qu’elle permet de voir :**  
-La position de Bordeaux Métropole par rapport aux autres métropoles, à la Gironde et à la France.
+<details>
+<summary><b>Détail des traitements propres à chaque table</b></summary>
 
+- **`arretes_par_commune`** : liste complète des communes, y compris celles sans arrêté (0) ; total et détail par type ; tri décroissant. Filtrer `departement == "33"` pour la Gironde.
+- **`heatmap_communes`** : simple filtre de `arretes_par_commune` sur les 28 communes de la métropole.
+- **`benchmark`** : total d'arrêtés par territoire, nombre de communes (référentiel toutes années), moyenne d'arrêtés par commune.
+- **`episodes_par_annee`** : filtre sur la métropole ; un épisode touchant plusieurs communes est compté **une seule fois** ; comptage par année et par type ; années sans épisode mises à 0.
+- **`climat_annuel`** : traitements « Climat » ci-dessus ; colonnes `TX`, `NBJTX30`, `NBJTX35`, `NBJTNS20`, `RR`, `ETP`, `NBJRR30`, `NBJRR50`, `bilan_hydrique`, `nb_stations`, moyennes mobiles `*_mm10`. Fiabilité plus faible avant 1954 (5 à 7 stations).
+- **`lien_climat_catastrophes`** : jointure de `climat_annuel` et `episodes_par_annee` sur l'année (années communes uniquement).
 
-### `arretes_par_commune`
+</details>
 
-**Niveau et période :**  
-France entière (environ 35 000 communes), une ligne par commune.
+---
 
-**Prétraitements propres :**  
-Liste complète des communes, y compris celles sans arrêté ; total et détail par type de risque ; 0 si aucun arrêté ; tri décroissant.
+## 4. Le dashboard
 
-**Ce qu’elle permet de voir :**  
-Le classement national des communes et la place des communes de Bordeaux. 
-### Prendre departement = 33 pour se concentrer sur le département de bordeau
+Une seule page, sans défilement sur un écran d'ordinateur, lisible en trois temps : **le chiffre (KPI) → la tendance (graphique) → le détail (fenêtre)**.
 
+### Les 5 KPI : la réponse en un coup d'œil
 
-### `heatmap_communes`
+| Question | KPI | Valeur 1950-2022 |
+|---|---|---|
+| ① | Arrêtés CatNat · Bordeaux Métropole | 840 (28 communes) |
+| ① | Risque dominant | Sécheresse / argiles (46 % des épisodes) |
+| ① | Commune la plus touchée | Le Bouscat · inondations |
+| ② | Nombre de catastrophes 1982-2022 | 135 (≈ 33 par décennie) |
+| ③ | Jours ≥ 30 °C par an, en moyenne sur la période | 20,6 j |
 
-**Niveau et période :**  
-Les 28 communes de Bordeaux Métropole.
+### Les 4 graphiques : une question chacun
 
-**Prétraitements propres :**  
-Simple filtre de `arretes_par_commune` sur la métropole.
+| Position | Graphique | Question | Type | Table |
+|---|---|---|---|---|
+| Haut gauche | Communes les plus exposées | ① Où se concentre le risque ? | Barres horizontales empilées (top 10 ; les 28 dans le détail) | `heatmap_communes` |
+| Bas gauche | Fréquence des catastrophes | ② Quels risques progressent ? | Courbes par décennie + indicateur climatique en dessous (axe séparé) | `episodes_par_annee` + `climat_annuel` |
+| Haut droite | Évolution du climat | ③ Le climat change-t-il ? | Barres annuelles + moyenne mobile sur 10 ans | `climat_annuel` |
+| Bas droite | Lien climat × catastrophes | ③ Le climat aggrave-t-il ? | Nuage de points + tendance + coefficient r | `lien_climat_catastrophes` |
 
-**Ce qu’elle permet de voir :**  
-Quelle commune est touchée par quel risque, donc où agir en priorité.
+**Code couleur des cartes :** liseré orange = catastrophes (colonne de gauche), turquoise = climat (haut droite), moitié-moitié = le lien (bas droite).
 
+### Les filtres
 
-### `lien_climat_catastrophes`
+| Filtre | Emplacement | Effet |
+|---|---|---|
+| **Indicateur climatique** | En haut à gauche | Met à jour les graphiques climat, fréquence et lien (jours ≥ 30 °C, pluie, bilan hydrique…) |
+| **Types de catastrophes** | À côté | Met à jour les graphiques communes, fréquence et lien |
+| **Période** | En haut à droite | 1950-2022 ; s'applique au climat, aux épisodes et aux KPI |
 
-**Niveau et période :**  
-Climat de la Gironde + épisodes de la métropole, 1982-2022, une ligne par année.
+Les titres des graphiques changent avec les filtres (ex. « Fréquence des inondations vs pluie annuelle »).
 
-**Prétraitements propres :**  
-Jointure de `climat_annuel` et `episodes_par_annee` sur l’année (années communes seulement).
+### La fenêtre de détail (clic sur un graphique)
 
-**Ce qu’elle permet de voir :**  
-La relation entre le climat et les catastrophes (nuage de points, exploratoire : ce n’est pas une preuve de cause).
+- Filtres propres au graphique (regroupement, mode d'affichage, tri, communes…).
+- Graphique complet et interactif, avec un résumé en texte.
+- **Explorer année par année** (graphiques climat et lien) : un curseur au clavier annonce la valeur, l'écart à la moyenne et le rang.
+- **Tableau des données** et bouton **« Télécharger les données (Excel) »** (2 feuilles : données et description).
 
+### L'accessibilité
 
-## POINT a voir dans le dash 
+Le bouton **Accessibilité** (en haut à droite) ouvre les réglages ; ils sont mémorisés dans le navigateur.
 
-- présentation du dashboard (orchestration)
-- UN coté météo et un catastrophe naturel avec des KPI sur le haut de la page (proposition du prof) Sinon on peut avoir un plotline qui montre l'évolution des indicateur météo a travers le temps les températures, la pluviométrie etc.
-- Peut se basé sur des décénies pour nos analyses
-- Voir une facon de joindre les deux analyse pour avoir une corrélation entre les deux mondes : Météo x Cat
-- SOit une petite régression soit une autre façon de faire 
-- PRésentation sur la tram de la A suivre : Justification des méthodes (technologie utilisé) que nous avons choisie PQ ? les base que nous avons ? ce que nous avons fait en pré traitemnet et pourquoi (présent dans le readme) ?  les choix d'affichage ? (prétraitement des bases completement présent sur le readme)
+| Besoin | Ce qui est prévu |
+|---|---|
+| Daltonisme, impression N&B | Motifs sur les barres, pointillés et formes de points distincts, couleur jamais seule |
+| Malvoyance | Thèmes clair / sombre / contraste élevé / automatique ; texte 125 % ou 150 % (grille 2 × 2 conservée) ; police Atkinson Hyperlegible |
+| Dyslexie | Espacement du texte augmenté (WCAG 1.4.12) |
+| Sensibilité au mouvement | Animations réduites |
+| Clavier seul | Tab entre les graphiques, Entrée ouvre, Échap ferme et rend le focus ; focus visible ; lien d'évitement |
+| Lecteur d'écran | Page en français, titres hiérarchisés, résumé texte lu automatiquement, tableaux avec en-têtes, fenêtres `<dialog>` natives |
 
-## Visuels et tables associés
+Référentiels suivis : WCAG 2.1 et RGAA (pas encore d'audit avec des utilisateurs).
 
-### 1. Nombre d’arrêtés par département en France
+---
 
-**Table :**  
-`benchmark`
+## 5. Installer et lancer
 
-**Filtre / colonnes :**  
-`niveau == "Département"`, colonnes `territoire` et `nb_arretes` (total) ou `arretes_par_commune` (moyenne).
+**Prérequis :** Python 3 (le projet est développé et testé avec Python 3.13).
 
-**Visuel :**  
-Barres horizontales (top 15).
+Tous les paquets nécessaires sont listés, avec leurs versions testées, dans [`requirements.txt`](requirements.txt) :
 
+| Paquet | Version | Rôle |
+|---|---|---|
+| `dash` | 4.4.1 | Application web |
+| `plotly` | 7.1.0 | Graphiques |
+| `pandas` | 3.0.6 | Lecture et calcul des données |
+| `numpy` | 2.5.3 | Tendances et corrélations |
+| `openpyxl` | 3.1.5 | Export Excel des données |
+| `ipykernel` | 7.4.0 | Exécuter le notebook de préparation |
 
-### 2. Arrêtés par département et par type de risque
+**1. Créer l'environnement virtuel** (une seule fois, depuis la racine du projet) :
 
-**Table :**  
-`arretes_par_commune`
+```bash
+python -m venv .venv
+```
 
-**Filtre / colonnes :**  
-`groupby("libelle_departement")` puis somme des colonnes de types.
+**2. Installer les paquets :**
 
-**Visuel :**  
-Barres empilées.
+```bash
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
 
+**3. Lancer le dashboard :**
 
-### 3. Arrêtés par commune dans le 33
+```bash
+.venv\Scripts\python.exe dashboard\app.py
+```
 
-**Table :**  
-`arretes_par_commune`
+Puis ouvrir **http://127.0.0.1:8050**.
 
-**Filtre / colonnes :**  
-`departement == "33"`, colonne `nb_arretes`.
+> Sous macOS / Linux, remplacer `.venv\Scripts\python.exe` par `.venv/bin/python`.
 
-**Visuel :**  
-Classement des 20 premières, ou histogramme de distribution.
+> Le serveur démarre en mode `debug` (barre « Errors / Callbacks » en bas à droite). Pour une démonstration, passer `app.run(debug=False)` à la fin de `dashboard/app.py`.
 
+---
 
-### 4. Les 28 communes de la métropole par type de risque
+## 6. Organisation du projet
 
-**Table :**  
-`heatmap_communes`
+```
+DATAVIZ Dashboard/
+├── data/                              Données brutes
+│   ├── catnat.csv                       Arrêtés CatNat par commune
+│   └── MENSQ_33_previous-1950-2024.csv  Météo-France, données mensuelles de Gironde
+├── notebook/
+│   ├── cration_base.ipynb               Préparation : données brutes → tables
+│   ├── dash.ipynb                       Essais
+│   └── *.csv                            Les 6 tables préparées (section 3)
+├── dashboard/
+│   ├── app.py                           Application Dash (données, mise en page, graphiques)
+│   └── assets/
+│       ├── style.css                    Styles, thèmes et accessibilité
+│       └── dialogs.js                   Ouverture / fermeture des fenêtres de détail
+├── captures/                          Captures d'écran du dashboard (présentation)
+├── requirements.txt                   Paquets Python à installer
+└── README.md
+```
 
-**Filtre / colonnes :**  
-Colonnes de types (Inondations, Sécheresse / argiles, Tempêtes...).
+---
 
-**Visuel :**  
-Heatmap.
+## 7. Annexes
 
+### Trame de la présentation
 
-### 5. Bordeaux Métropole vs reste de la Gironde vs France vs autres métropoles
+- [ ] **La problématique** et les trois questions qui en découlent (sections 1 et 2).
+- [ ] **Les données** : quelles bases, quels prétraitements et pourquoi (section 3).
+- [ ] **Les méthodes et la technologie** : pourquoi Python, Dash et Plotly.
+- [ ] **Les choix d'affichage** : une page, KPI en haut, catastrophes à gauche, climat à droite, analyses par décennie (section 4).
+- [ ] **Le lien météo × catastrophes** : corrélation exploratoire (nuage de points + coefficient r), pas une preuve de cause.
+- [ ] **L'accessibilité** : options, clavier, lecteur d'écran.
 
-**Table :**  
-`benchmark`
+### Idées de visuels non retenues
 
-**Filtre / colonnes :**  
-Filtre sur `niveau` (France, Département, Métropole).
+Pistes envisagées au départ ; certaines restent faisables avec les tables existantes.
 
-**Visuel :**  
-Barres comparées, KPI en haut de page.
-
-
-### 6. Évolution des catastrophes dans la métropole
-
-**Table :**  
-`episodes_par_annee`
-
-**Filtre / colonnes :**  
-Une colonne par type, `annee` en abscisse.
-
-**Visuel :**  
-Barres empilées par année, filtre par type.
-
-
-### 7. Risque dominant
-
-**Table :**  
-`episodes_par_annee` ou `heatmap_communes`
-
-**Filtre / colonnes :**  
-Somme des colonnes de types.
-
-**Visuel :**  
-Barre à 100 %.
-
-## Indicateurs climatiques et visuels associés
-
-### 8. Évolution d’un indicateur avec sélecteur
-
-**Table :**  
-`climat_annuel`
-
-**Filtre / colonnes :**  
-`annee` en abscisse, liste déroulante parmi `TX`, `NBJTX30`, `NBJTX35`, `NBJTNS20`, `RR`, `ETP`, `NBJRR30`, `NBJRR50`, `bilan_hydrique`.
-
-**Visuel :**  
-Courbe.
-
-
-### 9. Réchauffement
-
-**Table :**  
-`climat_annuel`
-
-**Filtre / colonnes :**  
-`NBJTX30` et `NBJTX30_mm10` (moyenne mobile 10 ans).
-
-**Visuel :**  
-Courbe + tendance.
-
-
-### 10. Sécheresse
-
-**Table :**  
-`climat_annuel`
-
-**Filtre / colonnes :**  
-`bilan_hydrique`, `RR`, `ETP`.
-
-**Visuel :**  
-Courbe, ligne à zéro.
-
-
-### 11. Pluies extrêmes
-
-**Table :**  
-`climat_annuel`
-
-**Filtre / colonnes :**  
-`NBJRR30`, `NBJRR50`.
-
-**Visuel :**  
-Barres par année.
-
-
-### 12. Fiabilité de la moyenne
-
-**Table :**  
-`climat_annuel`
-
-**Filtre / colonnes :**  
-`nb_stations`.
-
-**Visuel :**  
-Petite note sous le graphique.
-
-### 13. Le climat évolue-t-il avec les catastrophes ?
-
-**Table :**  
-`lien_climat_catastrophes`
-
-**Filtre / colonnes :**  
-`NBJTX30` ou `bilan_hydrique` en abscisse, `Sécheresse / argiles` en ordonnée.
-
-**Visuel :**  
-Nuage de points exploratoire (environ 40 points, pas de preuve de cause).
-
+| Visuel | Question | Table | Statut |
+|---|---|---|---|
+| Arrêtés par département (top 15) | ① | `benchmark` | Retiré du dashboard |
+| Arrêtés par département et par type | ① | `arretes_par_commune` | Retiré du dashboard |
+| Arrêtés par commune de Gironde (top 20) | ① | `arretes_par_commune` (`departement == "33"`) | Non réalisé |
+| Bordeaux Métropole vs Gironde, France, autres métropoles | ① | `benchmark` | Retiré du dashboard (repris dans la présentation) |
+| Heatmap des 28 communes × types | ① | `heatmap_communes` | Remplacée par des barres empilées (plus lisibles) |
+| Risque dominant en barre à 100 % | ① | `episodes_par_annee` | Remplacé par un KPI |
+| Sécheresse : bilan hydrique, pluie, ETP avec ligne à zéro | ③ | `climat_annuel` | Intégré au sélecteur d'indicateur |
+| Pluies extrêmes (jours ≥ 30 / 50 mm) | ③ | `climat_annuel` | Intégré au sélecteur d'indicateur |
